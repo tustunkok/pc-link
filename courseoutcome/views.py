@@ -18,6 +18,8 @@ from .models import (
     CourseOutcomeAverage
 )
 
+from .forms import CourseOutcomeForm
+
 @login_required
 def report(request):
     std_id = request.GET.get('student_no', False)
@@ -63,9 +65,18 @@ def report(request):
 
 @login_required
 def upload(request):
+    form = CourseOutcomeForm(request.POST or None, request.FILES or None)
+
+    if request.method == "POST":
+        if form.is_valid():
+            course_code = form.cleaned_data["course"]
+            semester_pk = form.cleaned_data["semester"]
+            csvFile = form.cleaned_data["outcome_file"]
+
+            handle_upload(course_code, semester_pk, csvFile)
+
     context = {
-        "courses": Course.objects.all(),
-        "semesters": Semester.objects.all()
+        "form": form
     }
 
     return render(request, "courseoutcome/upload.html", context)
@@ -107,54 +118,47 @@ def export(request):
 
     return response
 
-@login_required
-def handle_upload(request):
-    if request.method == "POST" and request.FILES["csvFile"]:
-        csvFile = request.FILES["csvFile"]
-        course_code = request.POST["courseSel"]
-        semester_pk = request.POST["semesterSel"]
+def handle_upload(course_code, semester_pk, csvFile):
+    course = Course.objects.get(code=course_code)
+    semester = Semester.objects.get(pk=semester_pk)
 
-        course = Course.objects.get(code=course_code)
-        semester = Semester.objects.get(pk=semester_pk)
+    with open('/tmp/django_tmp_file.csv', 'wb') as destination:
+        for chunk in csvFile.chunks():
+            destination.write(chunk)
 
-        with open('/tmp/django_tmp_file.csv', 'wb') as destination:
-            for chunk in csvFile.chunks():
-                destination.write(chunk)
+    with open("/tmp/django_tmp_file.csv", "r") as csv_file:
+        first_row = True
+        for row in csv.reader(csv_file):
+            if first_row:
+                first_row = False
+                course_outcomes = row[2:]
+                continue
 
-        with open("/tmp/django_tmp_file.csv", "r") as csv_file:
-            first_row = True
-            for row in csv.reader(csv_file):
-                if first_row:
-                    first_row = False
-                    course_outcomes = row[2:]
-                    continue
+            student = Student.objects.filter(no=row[0]).first()
+            
+            if student is not None:
+                for co_idx, co in enumerate(course_outcomes):
+                    course_outcome = CourseOutcome.objects.get(code=co)
 
-                student = Student.objects.filter(no=row[0]).first()
-                
-                if student is not None:
-                    for co_idx, co in enumerate(course_outcomes):
-                        course_outcome = CourseOutcome.objects.get(code=co)
+                    course_outcome_result = CourseOutcomeResult.objects.filter(student=student, course=course, course_outcome=course_outcome, semester=semester).first()
+                    if course_outcome_result:
+                        course_outcome_result.satisfaction = row[co_idx + 2]
+                        course_outcome_result.save()
+                    else:
+                        CourseOutcomeResult.objects.create(student=student, course=course, course_outcome=course_outcome, semester=semester, satisfaction=row[co_idx + 2])
+                    
+                    cor_student_records_all_courses = CourseOutcomeResult.objects.filter(student=student, course_outcome=course_outcome, semester=semester)
+                    satisfactions = [cor.satisfaction for cor in cor_student_records_all_courses if cor.satisfaction == "1" or cor.satisfaction == "0" or cor.satisfaction == "M"]
+                    ones_count = satisfactions.count("1") + satisfactions.count("M")
+                    zeros_count = satisfactions.count("0")
+                    satisfaction_res = int(ones_count >= zeros_count) if ones_count > 0 else 0
 
-                        course_outcome_result = CourseOutcomeResult.objects.filter(student=student, course=course, course_outcome=course_outcome, semester=semester).first()
-                        if course_outcome_result:
-                            course_outcome_result.satisfaction = row[co_idx + 2]
-                            course_outcome_result.save()
-                        else:
-                            CourseOutcomeResult.objects.create(student=student, course=course, course_outcome=course_outcome, semester=semester, satisfaction=row[co_idx + 2])
-                        
-                        cor_student_records_all_courses = CourseOutcomeResult.objects.filter(student=student, course_outcome=course_outcome, semester=semester)
-                        satisfactions = [cor.satisfaction for cor in cor_student_records_all_courses if cor.satisfaction == "1" or cor.satisfaction == "0" or cor.satisfaction == "M"]
-                        ones_count = satisfactions.count("1") + satisfactions.count("M")
-                        zeros_count = satisfactions.count("0")
-                        satisfaction_res = int(ones_count >= zeros_count) if ones_count > 0 else 0
-
-                        course_outcome_average = CourseOutcomeAverage.objects.filter(student=student, course_outcome=course_outcome, semester=semester).first()
-                        if course_outcome_average:
-                            course_outcome_average.overall_satisfaction = satisfaction_res
-                            course_outcome_average.save()
-                        else:
-                            CourseOutcomeAverage.objects.create(student=student, course_outcome=course_outcome, semester=semester, overall_satisfaction=satisfaction_res)
-    return redirect("courseoutcome-home")
+                    course_outcome_average = CourseOutcomeAverage.objects.filter(student=student, course_outcome=course_outcome, semester=semester).first()
+                    if course_outcome_average:
+                        course_outcome_average.overall_satisfaction = satisfaction_res
+                        course_outcome_average.save()
+                    else:
+                        CourseOutcomeAverage.objects.create(student=student, course_outcome=course_outcome, semester=semester, overall_satisfaction=satisfaction_res)
 
 def bulk_insert_students(request):
     csv_location = "/home/tustunkok/Documents/Atilim University/MÜDEK/MUDEK Management/courseoutcome_student.csv"

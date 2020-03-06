@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load crispy_forms_tags %}
 {% block content %}
 
 <div class="row">
@@ -13,30 +14,9 @@
         <div class="alert alert-warning" role="alert">
             You have to choose the <b>semester</b> and <b>course</b> that are relevant to the file to be uploaded.
         </div>
-        <form method="POST" enctype="multipart/form-data" action="{% url 'courseoutcome-upload' %}">
+        <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
-            <div class="form-group">
-                <select class="form-control" name="courseSel">
-                    <option value="no">Pick a course</option>
-                    {% for course in courses %}
-                    <option value="{{ course.code }}">{{ course.code }} - {{ course.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <select class="form-control" name="semesterSel">
-                    <option value="no">Semester</option>
-                    {% for semester in semesters %}
-                    <option value="{{ semester.pk }}">{{ semester.year_interval }} {{ semester.period_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <input type="file" name="csvFile" class="form-control">
-            </div>
-
+            {{ form|crispy }}
             <button type="submit" class="btn btn-lg btn-primary">Upload</button>
         </form>
     </div>

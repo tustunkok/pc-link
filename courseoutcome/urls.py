@@ -5,7 +5,6 @@ from . import views
 urlpatterns = [
     path("", views.upload, name="courseoutcome-home"),
     path("report/", views.report, name="courseoutcome-report"),
-    path("upload/", views.handle_upload, name="courseoutcome-upload"),
     path("export/", views.export, name="courseoutcome-export"),
     path("recalculate/", views.recalculate_everything),
     path("course/bulk_insert/", views.bulk_insert_courses),
