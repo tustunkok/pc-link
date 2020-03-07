@@ -119,8 +119,8 @@ def export(request):
     return response
 
 def handle_upload(course_code, semester_pk, csvFile):
-    course = Course.objects.get(code=course_code)
-    semester = Semester.objects.get(pk=semester_pk)
+    course = get_object_or_404(Course, code=course_code)
+    semester = get_object_or_404(Semester, pk=semester_pk)
 
     with open('/tmp/django_tmp_file.csv', 'wb') as destination:
         for chunk in csvFile.chunks():
