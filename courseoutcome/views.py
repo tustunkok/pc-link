@@ -67,13 +67,12 @@ def report(request):
 def upload(request):
     form = CourseOutcomeForm(request.POST or None, request.FILES or None)
 
-    if request.method == "POST":
-        if form.is_valid():
-            course_code = form.cleaned_data["course"]
-            semester_pk = form.cleaned_data["semester"]
-            csvFile = form.cleaned_data["outcome_file"]
+    if form.is_valid():
+        course_code = form.cleaned_data["course"]
+        semester_pk = form.cleaned_data["semester"]
+        csvFile = form.cleaned_data["outcome_file"]
 
-            handle_upload(course_code, semester_pk, csvFile)
+        handle_upload(course_code, semester_pk, csvFile)
 
     context = {
         "form": form
