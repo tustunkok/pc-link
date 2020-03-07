@@ -2,3 +2,7 @@
   justify-content: center;
 }
 
+.jumbotron {
+  background-image: url("../img/jumbotron-bg.png");
+  background-size: cover;
+}

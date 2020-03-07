@@ -20,6 +20,7 @@ from users import views as user_views
 from courseoutcome import views as courseoutcome_views
 
 urlpatterns = [
+    path('', courseoutcome_views.index, name="index-page"),
     path('courseoutcome/', include('courseoutcome.urls')),
     path('register/', user_views.register, name="register"),
     path('login/', auth_views.LoginView.as_view(template_name="users/login.html"), name="login"),

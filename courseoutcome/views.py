@@ -20,6 +20,9 @@ from .models import (
 
 from .forms import CourseOutcomeForm
 
+def index(request):
+    return render(request, "courseoutcome/index.html", {})
+
 @login_required
 def report(request):
     std_id = request.GET.get('student_no', False)
