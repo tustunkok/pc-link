@@ -1,0 +1,38 @@
+version: "3"
+
+services:
+  pclink:
+    build: .
+    image: pclink:0.1.0-alpha
+    volumes:
+      - .:/pclink
+      - static-volume:/home/ubuntu/static/
+      - media-volume:/home/ubuntu/media/
+    command: uwsgi --ini /pclink/django.ini
+    depends_on:
+      - db
+
+  webserver:
+    image: nginx:1
+    ports:
+      - "80:80"
+    volumes:
+      - ./pclink.conf:/etc/nginx/conf.d/pclink.conf:ro
+      - static-volume:/home/ubuntu/static/
+      - media-volume:/home/ubuntu/media/
+    command: nginx -g "daemon off;"
+    depends_on:
+      - pclink
+      - db
+
+  db:
+    image: mariadb:10.4
+    environment:
+      MYSQL_ROOT_PASSWORD: bonertol01994
+    volumes:
+      - mariadb-database:/var/lib/mysql
+
+volumes:
+  mariadb-database:
+  static-volume:
+  media-volume:

@@ -40,8 +40,8 @@ def report(request):
         query = CourseOutcomeAverage.objects.filter(student__no=std_id, course_outcome__code=co_code)
     
     # TODO: Rework
-    if dpt_code != "all":
-        query = CourseOutcomeAverage.objects.filter(course_outcome__code=co_code, student__department=get_object_or_404(Department, code=dpt_code))
+    # if dpt_code != "all":
+    #     query = CourseOutcomeAverage.objects.filter(course_outcome__code=co_code, student__department=get_object_or_404(Department, code=dpt_code))
 
     
     query_dict = dict()
