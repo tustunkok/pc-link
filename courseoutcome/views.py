@@ -39,6 +39,11 @@ def report(request):
     elif std_id != "all" and co_code != "all":
         query = CourseOutcomeAverage.objects.filter(student__no=std_id, course_outcome__code=co_code)
     
+    # TODO: Rework
+    if dpt_code != "all":
+        query = CourseOutcomeAverage.objects.filter(course_outcome__code=co_code, student__department=get_object_or_404(Department, code=dpt_code))
+
+    
     query_dict = dict()
 
     for item in query:
@@ -98,7 +103,7 @@ def export(request):
         target_file = response if export_type == "csv" else tmp_csv_file
 
         writer = csv.writer(target_file)
-        writer.writerow(["student_id", "name"] + [co.code for co in CourseOutcome.objects.order_by("order").all()])
+        writer.writerow(["student_id", "name", "department"] + [co.code for co in CourseOutcome.objects.order_by("order").all()])
 
         records = list()
         for student in Student.objects.all():
@@ -110,7 +115,7 @@ def export(request):
                 else:
                     coas.append("0")
 
-            records.append([student.no, student.name] + coas)
+            records.append([student.no, student.name, student.department.code] + coas)
 
         writer.writerows(records)
 
@@ -167,6 +172,16 @@ def bulk_insert_students(request):
 
     with open(csv_location, "r") as csv_file:
         instances = [Student(no=row[1], name=row[2], graduated_on=row[3] if row[3] != "" else None, department=Department.objects.get(pk=int(row[4])), double_major_student=bool(int(row[5])), vertical_transfer=bool(int(row[6]))) for row in csv.reader(csv_file)]
+
+    Student.objects.bulk_create(instances)
+
+    return redirect("/admin/")
+
+def bulk_insert_students_cmpe(request):
+    csv_location = "/home/tustunkok/Documents/Atilim University/MÜDEK/MUDEK Management/cmpe-students.csv"
+
+    with open(csv_location, "r") as csv_file:
+        instances = [Student(no=row[0], name=row[1], department=Department.objects.get(code="CMPE")) for row in csv.reader(csv_file)]
 
     Student.objects.bulk_create(instances)
 
