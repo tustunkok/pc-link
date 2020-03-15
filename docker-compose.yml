@@ -4,6 +4,7 @@ services:
   pclink:
     build: .
     image: pclink:0.1.0-alpha
+    restart: on-failure
     volumes:
       - .:/pclink
       - static-volume:/home/ubuntu/static/
@@ -14,6 +15,7 @@ services:
 
   webserver:
     image: nginx:1
+    restart: on-failure
     ports:
       - "80:80"
     volumes:
@@ -27,6 +29,7 @@ services:
 
   db:
     image: mariadb:10.4
+    restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: bonertol01994
     volumes:
