@@ -5,6 +5,7 @@
           <ul class="nav navbar-nav text-left ml-auto">
               <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'courseoutcome-home' %}">Upload Course Outcome File</a></li>
               <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'courseoutcome-report' %}">Create Report</a></li>
+              <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'courseoutcome-dm' %}">Direct Input</a></li>
               <li class="nav-item" role="presentation"><a class="nav-link" href="#">Help</a></li>
               {% if user.is_authenticated %}
                 <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>

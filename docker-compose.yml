@@ -3,7 +3,7 @@ version: "3"
 services:
   pclink:
     build: .
-    image: pclink:0.1.0-alpha
+    image: pclink:0.2.0-alpha
     restart: on-failure
     volumes:
       - .:/pclink

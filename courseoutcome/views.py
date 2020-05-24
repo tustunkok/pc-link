@@ -3,7 +3,7 @@ import pandas as pd
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.views.generic import ListView
+from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.core.paginator import Paginator
@@ -18,7 +18,22 @@ from .models import (
     CourseOutcomeAverage
 )
 
-from .forms import CourseOutcomeForm
+from .forms import CourseOutcomeForm, CourseOutcomeAverageForm
+
+class CourseOutcomeAverageCreateView(LoginRequiredMixin, View):
+    template_name = "courseoutcome/courseoutcomeaverage_create.html"
+
+    def get(self, request, *args, **kwargs):
+        form = CourseOutcomeAverageForm()
+        context = {"form": form}
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        form = CourseOutcomeAverageForm(request.POST)
+        if form.is_valid():
+            form.save()
+        context = {"form": form}
+        return render(request, self.template_name, context)
 
 def index(request):
     return render(request, "courseoutcome/index.html", {})
