@@ -15,3 +15,4 @@ RUN apk del build-dependecies
 WORKDIR /pclink/
 COPY . /pclink/
 RUN python manage.py collectstatic
+RUN rm -r /pclink/*

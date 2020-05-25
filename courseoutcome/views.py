@@ -183,7 +183,7 @@ def handle_upload(course_code, semester_pk, csvFile):
                         CourseOutcomeAverage.objects.create(student=student, course_outcome=course_outcome, semester=semester, overall_satisfaction=satisfaction_res)
 
 def bulk_insert_students(request):
-    csv_location = "/home/tustunkok/Documents/Atilim University/MÜDEK/MUDEK Management/courseoutcome_student.csv"
+    csv_location = "migration_files/courseoutcome_student.csv"
 
     with open(csv_location, "r") as csv_file:
         instances = [Student(no=row[1], name=row[2], graduated_on=row[3] if row[3] != "" else None, department=Department.objects.get(pk=int(row[4])), double_major_student=bool(int(row[5])), vertical_transfer=bool(int(row[6]))) for row in csv.reader(csv_file)]
@@ -203,7 +203,7 @@ def bulk_insert_students_cmpe(request):
     return redirect("/admin/")
 
 def bulk_insert_courses(request):
-    csv_location = "/home/tustunkok/Documents/Atilim University/MÜDEK/MUDEK Management/courseoutcome_course.csv"
+    csv_location = "migration_files/courseoutcome_course.csv"
 
     with open(csv_location, "r") as csv_file:
         instances = [Course(code=row[1], name=row[2]) for row in csv.reader(csv_file)]
@@ -213,7 +213,7 @@ def bulk_insert_courses(request):
     return redirect("/admin/")
 
 def bulk_insert_courseoutcomes(request):
-    csv_location = "/home/tustunkok/Documents/Atilim University/MÜDEK/MUDEK Management/courseoutcome_courseoutcome.csv"
+    csv_location = "migration_files/courseoutcome_courseoutcome.csv"
 
     with open(csv_location, "r") as csv_file:
         instances = [CourseOutcome(code=row[1], order=int(row[2])) for row in csv.reader(csv_file)]

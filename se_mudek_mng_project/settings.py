@@ -25,7 +25,7 @@ SECRET_KEY = '%h292q8zs1^)p757)v#8*952txwnzcuviw8tynxxk+ewxp6%()'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "172.16.238.110"]
+ALLOWED_HOSTS = ["127.0.0.1", "172.16.238.110", "toliga.ddns.net"]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 6000
 

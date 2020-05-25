@@ -14,6 +14,13 @@ class Department(models.Model):
     def __str__(self):
         return self.code + " - " + self.name
 
+class Course(models.Model):
+    code = models.CharField(max_length=9)
+    name = models.CharField(max_length=120)
+
+    def __str__(self):
+        return self.code
+
 class Student(models.Model):
     no = models.CharField(max_length=11)
     name = models.CharField(max_length=60)
@@ -24,13 +31,6 @@ class Student(models.Model):
 
     def __str__(self):
         return self.name
-
-class Course(models.Model):
-    code = models.CharField(max_length=9)
-    name = models.CharField(max_length=120)
-
-    def __str__(self):
-        return self.code
 
 class CourseOutcome(models.Model):
     order = models.IntegerField()

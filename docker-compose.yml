@@ -5,11 +5,15 @@ services:
     build: .
     image: pclink:0.2.0-alpha
     restart: on-failure
+    environment:
+      DJANGO_SUPERUSER_USERNAME: tustunkok
+      DJANGO_SUPERUSER_EMAIL: tolga.ustunkok@atilim.edu.tr
+      DJANGO_SUPERUSER_PASSWORD: toliga8121994
     volumes:
       - .:/pclink
       - static-volume:/home/ubuntu/static/
       - media-volume:/home/ubuntu/media/
-    command: uwsgi --ini /pclink/django.ini
+    command: sh start.sh
     depends_on:
       - db
 
@@ -32,6 +36,13 @@ services:
     restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: bonertol01994
+      MYSQL_DATABASE: mudek
+      MYSQL_USER: pclink
+      MYSQL_PASSWORD: toliga8121994
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_unicode_ci
+      - --skip-character-set-client-handshake
     volumes:
       - mariadb-database:/var/lib/mysql
 
