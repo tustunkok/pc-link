@@ -193,7 +193,7 @@ def bulk_insert_students(request):
     return redirect("/admin/")
 
 def bulk_insert_students_cmpe(request):
-    csv_location = "/home/tustunkok/Documents/Atilim University/MÜDEK/MUDEK Management/cmpe-students.csv"
+    csv_location = "migration_files/cmpe-students.csv"
 
     with open(csv_location, "r") as csv_file:
         instances = [Student(no=row[0], name=row[1], department=Department.objects.get(code="CMPE")) for row in csv.reader(csv_file)]
