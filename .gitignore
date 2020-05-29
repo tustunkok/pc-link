@@ -99,7 +99,6 @@ celerybeat-schedule
 # Spyder project settings
 .spyderproject
 .spyproject
-.vscode
 
 # Rope project settings
 .ropeproject
@@ -119,6 +118,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Custom
+.vscode
+.env
+mariadb.cnf
 
 # End of https://www.gitignore.io/api/django
 #

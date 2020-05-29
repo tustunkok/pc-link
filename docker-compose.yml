@@ -6,9 +6,10 @@ services:
     image: pclink:0.2.0-alpha
     restart: on-failure
     environment:
-      DJANGO_SUPERUSER_USERNAME: tustunkok
-      DJANGO_SUPERUSER_EMAIL: tolga.ustunkok@atilim.edu.tr
-      DJANGO_SUPERUSER_PASSWORD: toliga8121994
+      - DJANGO_SUPERUSER_USERNAME
+      - DJANGO_SUPERUSER_EMAIL
+      - DJANGO_SUPERUSER_PASSWORD
+      - SECRET_KEY
     volumes:
       - .:/pclink
       - static-volume:/home/ubuntu/static/
@@ -35,10 +36,10 @@ services:
     image: mariadb:10.4
     restart: on-failure
     environment:
-      MYSQL_ROOT_PASSWORD: bonertol01994
-      MYSQL_DATABASE: mudek
-      MYSQL_USER: pclink
-      MYSQL_PASSWORD: toliga8121994
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
     command:
       - --character-set-server=utf8
       - --collation-server=utf8_unicode_ci
