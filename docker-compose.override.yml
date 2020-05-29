@@ -1,0 +1,12 @@
+version: "3"
+
+services:
+  pclink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - DJANGO_SECRET_KEY
+    ports:
+      - "80:8000"
+    command: sh start-test.sh

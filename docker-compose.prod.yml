@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  pclink:
+    command: sh start.sh
+
+  webserver:
+    image: nginx:1
+    restart: on-failure
+    ports:
+      - "80:80"
+    volumes:
+      - ./pclink.conf:/etc/nginx/conf.d/pclink.conf:ro
+      - static-volume:/home/ubuntu/static/
+      - media-volume:/home/ubuntu/media/
+    command: nginx -g "daemon off;"
+    depends_on:
+      - pclink
+      - db

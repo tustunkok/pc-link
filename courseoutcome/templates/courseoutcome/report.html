@@ -82,7 +82,7 @@
 </div>
 <div class="row">
     <div class="col">
-        <form class="form-inline" action="{% url 'courseoutcome-export' %}" method="POST">
+        <form class="form-inline" action="{% url 'courseoutcome:export' %}" method="POST">
             {% csrf_token %}
             <div class="form-group"><label>Export all records as:&nbsp;</label><select class="form-control"
                     name="exp_type">

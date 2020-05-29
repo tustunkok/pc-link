@@ -2,11 +2,6 @@ version: "3"
 
 services:
   pclink:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - DJANGO_SECRET_KEY
     image: pclink:0.3.0-alpha
     restart: on-failure
     environment:
@@ -18,22 +13,7 @@ services:
       - .:/pclink
       - static-volume:/home/ubuntu/static/
       - media-volume:/home/ubuntu/media/
-    command: sh start.sh
     depends_on:
-      - db
-
-  webserver:
-    image: nginx:1
-    restart: on-failure
-    ports:
-      - "80:80"
-    volumes:
-      - ./pclink.conf:/etc/nginx/conf.d/pclink.conf:ro
-      - static-volume:/home/ubuntu/static/
-      - media-volume:/home/ubuntu/media/
-    command: nginx -g "daemon off;"
-    depends_on:
-      - pclink
       - db
 
   db:
