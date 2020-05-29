@@ -14,5 +14,6 @@ RUN apk del build-dependecies
 
 WORKDIR /pclink/
 COPY . /pclink/
+ARG DJANGO_SECRET_KEY
 RUN python manage.py collectstatic
 RUN rm -r /pclink/*

@@ -2,14 +2,18 @@ version: "3"
 
 services:
   pclink:
-    build: .
-    image: pclink:0.2.0-alpha
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - DJANGO_SECRET_KEY
+    image: pclink:0.3.0-alpha
     restart: on-failure
     environment:
       - DJANGO_SUPERUSER_USERNAME
       - DJANGO_SUPERUSER_EMAIL
       - DJANGO_SUPERUSER_PASSWORD
-      - SECRET_KEY
+      - DJANGO_SECRET_KEY
     volumes:
       - .:/pclink
       - static-volume:/home/ubuntu/static/
