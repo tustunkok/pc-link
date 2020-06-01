@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Course, Semester, CourseOutcomeAverage
+from .models import Course, Semester
 
 def get_semesters():
     return [(semester.pk, f"{semester.year_interval} {semester.period_name}") for semester in Semester.objects.all()]
@@ -12,13 +12,3 @@ class CourseOutcomeForm(forms.Form):
     course = forms.ChoiceField(choices=get_courses, label="Select a course:")
     semester = forms.ChoiceField(choices=get_semesters, label="Select a semester:")
     outcome_file = forms.FileField(label="Upload the PÇ File:")
-
-class CourseOutcomeAverageForm(forms.ModelForm):
-    class Meta:
-        model = CourseOutcomeAverage
-        fields = [
-            "student",
-            "course_outcome",
-            "semester",
-            "overall_satisfaction"
-        ]

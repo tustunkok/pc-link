@@ -1,6 +1,6 @@
 #!/bin/sh
 
-sleep 10
+sleep 40
 python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser --noinput

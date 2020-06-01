@@ -35,7 +35,6 @@ class Student(models.Model):
 class CourseOutcome(models.Model):
     order = models.IntegerField()
     code = models.CharField(max_length=5)
-    courses = models.ManyToManyField(Course)
 
     def __str__(self):
         return self.code
@@ -44,17 +43,10 @@ class CourseOutcomeResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     course_outcome = models.ForeignKey(CourseOutcome, on_delete=models.CASCADE)
-    satisfaction = models.CharField(max_length=1)
+    satisfaction = models.IntegerField()
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.student.name + " - " + self.course.code + " - " + self.course_outcome.code + " - " + str(self.semester) + " - " + self.satisfaction
-
-class CourseOutcomeAverage(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    course_outcome = models.ForeignKey(CourseOutcome, on_delete=models.CASCADE)
-    overall_satisfaction = models.IntegerField()
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.student.name + " - " + self.course_outcome.code + " - " + str(self.overall_satisfaction) + " - " + str(self.semester)
+        return self.student.name + " - " + self.course.code + " - " + \
+            self.course_outcome.code + " - " + str(self.semester) + " - " + \
+            str(self.satisfaction)

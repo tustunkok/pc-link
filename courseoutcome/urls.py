@@ -5,12 +5,12 @@ from . import views
 app_name = "courseoutcome"
 urlpatterns = [
     path("", views.upload, name="home"),
-    path("report/", views.report, name="report"),
+    path("query/", views.generate_query, name="query"),
+    path("report/", views.CourseOutcomeAverageListView.as_view(), name="report"),
+    path("report/<department>/<int:semester_id>/", views.CourseOutcomeAverageListView.as_view(), name="report-all"),
+    path("report/<department>/<int:semester_id>/<course_outcome>/", views.CourseOutcomeAverageListView.as_view(), name="report-co"),
+    path("report/<department>/<int:semester_id>/<course_outcome>/<student>/", views.CourseOutcomeAverageListView.as_view(), name="report-co-stu"),
+    path("report/<department>/<int:semester_id>/<student>/", views.CourseOutcomeAverageListView.as_view(), name="report-stu"),
     path("export/", views.export, name="export"),
-    path("create/", views.CourseOutcomeAverageCreateView.as_view(), name="dm"),
-    path("recalculate/", views.recalculate_everything),
-    path("course/bulk_insert/", views.bulk_insert_courses),
-    path("student/bulk_insert/", views.bulk_insert_students),
-    path("courseoutcome/bulk_insert/", views.bulk_insert_courseoutcomes),
-    path("student/bulk_insert/cmpe/", views.bulk_insert_students_cmpe),
+    path("populate/", views.populate),
 ]

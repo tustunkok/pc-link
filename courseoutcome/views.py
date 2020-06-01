@@ -1,90 +1,98 @@
 import csv
 import pandas as pd
 
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, reverse, get_object_or_404, get_list_or_404
 from django.contrib.auth.decorators import login_required
-from django.views import View
+from django.views.generic.list import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator
+from django.db.models import Avg
 
 from .models import (
     Student,
     Department,
     Semester,
     Course,
-    CourseOutcomeResult,
     CourseOutcome,
-    CourseOutcomeAverage
+    CourseOutcomeResult
 )
 
-from .forms import CourseOutcomeForm, CourseOutcomeAverageForm
-
-class CourseOutcomeAverageCreateView(LoginRequiredMixin, View):
-    template_name = "courseoutcome/courseoutcomeaverage_create.html"
-
-    def get(self, request, *args, **kwargs):
-        form = CourseOutcomeAverageForm()
-        context = {"form": form}
-        return render(request, self.template_name, context)
-    
-    def post(self, request, *args, **kwargs):
-        form = CourseOutcomeAverageForm(request.POST)
-        if form.is_valid():
-            form.save()
-        context = {"form": form}
-        return render(request, self.template_name, context)
+from .forms import CourseOutcomeForm
 
 def index(request):
     return render(request, "courseoutcome/index.html", {})
 
-@login_required
-def report(request):
-    std_id = request.GET.get('student_no', False)
-    co_code = request.GET.get("co_code", False)
-    dpt_code = request.GET.get("department_code", False)
-    smster_pk = request.GET.get("semester_pk", False)
+class CourseOutcomeAverageListView(LoginRequiredMixin, ListView):
+    template_name = "courseoutcome/report.html"
+    paginate_by = 10
 
-    if std_id == "all" and co_code == "all":
-        query = CourseOutcomeAverage.objects.all()
-    elif std_id == "all" and co_code != "all":
-        query = CourseOutcomeAverage.objects.filter(course_outcome__code=co_code)
-    elif std_id != "all" and co_code == "all":
-        query = CourseOutcomeAverage.objects.filter(student__no=std_id)
-    elif std_id != "all" and co_code != "all":
-        query = CourseOutcomeAverage.objects.filter(student__no=std_id, course_outcome__code=co_code)
+    def get_queryset(self):
+        try:
+            semester = get_object_or_404(Semester, pk=self.kwargs["semester_id"])
+            department = get_object_or_404(Department, code=self.kwargs["department"])
+        except:
+            return []
+        
+        context_students = Student.objects.filter(department=department)
+        context_cors = CourseOutcomeResult.objects.filter(semester=semester)
+
+        try:
+            self.course_outcome = get_object_or_404(CourseOutcome, code=self.kwargs["course_outcome"])
+            context_cors = context_cors.filter(course_outcome=self.course_outcome)
+        except:
+            # TODO: This code block must be logged.
+            pass
+        
+        try:
+            context_students = get_list_or_404(Student, no=self.kwargs["student"])
+        except:
+            # TODO: This code block must be logged.
+            pass
+        
+
+        records = list()
+        for student in context_students:
+            coas = list()
+            for co in [self.course_outcome] if hasattr(self, "course_outcome") else CourseOutcome.objects.order_by("order"):
+                coa = context_cors.filter(
+                    student=student,
+                    course_outcome=co).aggregate(Avg("satisfaction"))
+                if coa["satisfaction__avg"] is not None:
+                    coas.append(round(coa["satisfaction__avg"]))
+                else:
+                    coas.append(0)
+            records.append([student.no, student.name, student.department.code, coas])
+        
+        return records
+
     
-    # TODO: Rework
-    # if dpt_code != "all":
-    #     query = CourseOutcomeAverage.objects.filter(course_outcome__code=co_code, student__department=get_object_or_404(Department, code=dpt_code))
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if hasattr(self, "course_outcome"):
+            context["chosen_cos"] = [self.course_outcome]
+        else:
+            context["chosen_cos"] = CourseOutcome.objects.order_by("order")
+        
+        context["semesters"] = Semester.objects.all()
+        context["departments"] = Department.objects.all()
+        context["outcomes"] = CourseOutcome.objects.order_by("order")
+        context["students"] = Student.objects.all()
+        return context
 
+def generate_query(request):
+    resulting_page_str = reverse("courseoutcome:report")
+
+    if request.POST.get("department_code") and request.POST.get("semester_pk"):
+        resulting_page_str += f"{request.POST.get('department_code')}/{request.POST.get('semester_pk')}/"
+        if request.POST.get("co_code"):
+            resulting_page_str += f"{request.POST.get('co_code')}/"
+            if request.POST.get("student_no"):
+                resulting_page_str += f"{request.POST.get('student_no')}/"
+        elif request.POST.get("student_no"):
+                resulting_page_str += f"{request.POST.get('student_no')}/"
     
-    query_dict = dict()
-
-    for item in query:
-        query_dict[item.student.no] = list()
-
-    for item in query:
-        query_dict[item.student.no].append(item)
-
-    context = dict()
-    context["outcomes"] = CourseOutcome.objects.order_by("order").all()
-    context["students"] = Student.objects.order_by("name").all()
-    context["departments"] = Department.objects.all()
-    context["semesters"] = Semester.objects.all()
-    context["chosen_cos"] = CourseOutcome.objects.all() if co_code == "all" else CourseOutcome.objects.filter(code=co_code)
-
-    paginator = Paginator(list(query_dict.values()), 12)
-
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-
-    if std_id: context["is_paginated"] = True
-
-    context["page_obj"] = page_obj
-    context["co_results"] = paginator.page(page_number).object_list
-
-    return render(request, "courseoutcome/report.html", context=context)
+    return redirect(resulting_page_str)
 
 @login_required
 def upload(request):
@@ -113,6 +121,8 @@ def export(request):
     elif export_type == "excel":
         response = HttpResponse(content_type="application/ms-excel")
         response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
+    else:
+        raise Http404("Page does not exist.")
 
     with open("/tmp/csv_file.csv", "w") as tmp_csv_file:
         target_file = response if export_type == "csv" else tmp_csv_file
@@ -124,11 +134,13 @@ def export(request):
         for student in Student.objects.all():
             coas = list()
             for co in CourseOutcome.objects.order_by("order").all():
-                coa = CourseOutcomeAverage.objects.filter(student=student, course_outcome=co).first()
-                if coa is not None:
-                    coas.append(int(coa.overall_satisfaction))
+                coa = CourseOutcomeResult.objects.filter(
+                    student=student,
+                    course_outcome=co).aggregate(Avg("satisfaction"))
+                if coa["satisfaction__avg"] is not None:
+                    coas.append(round(coa["satisfaction__avg"]))
                 else:
-                    coas.append("0")
+                    coas.append(0)
 
             records.append([student.no, student.name, student.department.code] + coas)
 
@@ -162,78 +174,54 @@ def handle_upload(course_code, semester_pk, csvFile):
                 for co_idx, co in enumerate(course_outcomes):
                     course_outcome = CourseOutcome.objects.get(code=co)
 
-                    course_outcome_result = CourseOutcomeResult.objects.filter(student=student, course=course, course_outcome=course_outcome, semester=semester).first()
+                    course_outcome_result = CourseOutcomeResult.objects.filter(
+                        student=student,
+                        course=course,
+                        course_outcome=course_outcome,
+                        semester=semester).first()
+
+                    sat_input_value = 1 if row[co_idx + 2] == "1" or row[co_idx + 2] == "M" else 0
+
                     if course_outcome_result:
-                        course_outcome_result.satisfaction = row[co_idx + 2]
+                        course_outcome_result.satisfaction = sat_input_value
                         course_outcome_result.save()
                     else:
-                        CourseOutcomeResult.objects.create(student=student, course=course, course_outcome=course_outcome, semester=semester, satisfaction=row[co_idx + 2])
-                    
-                    cor_student_records_all_courses = CourseOutcomeResult.objects.filter(student=student, course_outcome=course_outcome, semester=semester)
-                    satisfactions = [cor.satisfaction for cor in cor_student_records_all_courses if cor.satisfaction == "1" or cor.satisfaction == "0" or cor.satisfaction == "M"]
-                    ones_count = satisfactions.count("1") + satisfactions.count("M")
-                    zeros_count = satisfactions.count("0")
-                    satisfaction_res = int(ones_count >= zeros_count) if ones_count > 0 else 0
+                        CourseOutcomeResult.objects.create(
+                            student=student,
+                            course=course,
+                            course_outcome=course_outcome,
+                            semester=semester,
+                            satisfaction=sat_input_value)
 
-                    course_outcome_average = CourseOutcomeAverage.objects.filter(student=student, course_outcome=course_outcome, semester=semester).first()
-                    if course_outcome_average:
-                        course_outcome_average.overall_satisfaction = satisfaction_res
-                        course_outcome_average.save()
-                    else:
-                        CourseOutcomeAverage.objects.create(student=student, course_outcome=course_outcome, semester=semester, overall_satisfaction=satisfaction_res)
+def populate(request):
+    Department.objects.bulk_create([
+        Department(code="CMPE", name="Computer Engineering"),
+        Department(code="SE", name="Software Engineering")
+    ])
 
-def bulk_insert_students(request):
-    csv_location = "migration_files/courseoutcome_student.csv"
+    Semester.objects.bulk_create([
+        Semester(year_interval="2019-2020", period_name="Fall"),
+        Semester(year_interval="2019-2020", period_name="Spring")
+    ])
 
-    with open(csv_location, "r") as csv_file:
+    with open("migration_files/courseoutcome_student.csv", "r") as csv_file:
         instances = [Student(no=row[1], name=row[2], graduated_on=row[3] if row[3] != "" else None, department=Department.objects.get(pk=int(row[4])), double_major_student=bool(int(row[5])), vertical_transfer=bool(int(row[6]))) for row in csv.reader(csv_file)]
 
     Student.objects.bulk_create(instances)
 
-    return redirect("/admin/")
-
-def bulk_insert_students_cmpe(request):
-    csv_location = "migration_files/cmpe-students.csv"
-
-    with open(csv_location, "r") as csv_file:
+    with open("migration_files/cmpe-students.csv", "r") as csv_file:
         instances = [Student(no=row[0], name=row[1], department=Department.objects.get(code="CMPE")) for row in csv.reader(csv_file)]
 
     Student.objects.bulk_create(instances)
 
-    return redirect("/admin/")
-
-def bulk_insert_courses(request):
-    csv_location = "migration_files/courseoutcome_course.csv"
-
-    with open(csv_location, "r") as csv_file:
+    with open("migration_files/courseoutcome_course.csv", "r") as csv_file:
         instances = [Course(code=row[1], name=row[2]) for row in csv.reader(csv_file)]
 
     Course.objects.bulk_create(instances)
 
-    return redirect("/admin/")
-
-def bulk_insert_courseoutcomes(request):
-    csv_location = "migration_files/courseoutcome_courseoutcome.csv"
-
-    with open(csv_location, "r") as csv_file:
+    with open("migration_files/courseoutcome_courseoutcome.csv", "r") as csv_file:
         instances = [CourseOutcome(code=row[1], order=int(row[2])) for row in csv.reader(csv_file)]
 
     CourseOutcome.objects.bulk_create(instances)
 
-    return redirect("/admin/")
-
-def recalculate_everything(request):
-    CourseOutcomeAverage.objects.all().delete()
-
-    for student in Student.objects.all():
-        for course_outcome in CourseOutcome.objects.all():
-            cors = CourseOutcomeResult.objects.filter(student=student, course_outcome=course_outcome)
-
-            satisfactions = [cor.satisfaction for cor in cors if cor.satisfaction == "1" or cor.satisfaction == "0" or cor.satisfaction == "M"]
-            ones_count = satisfactions.count("1") + satisfactions.count("M")
-            zeros_count = satisfactions.count("0")
-            overall_satisfaction = int(ones_count >= zeros_count) if ones_count > 0 else 0
-                
-            CourseOutcomeAverage.objects.create(student=student, course_outcome=course_outcome, semester=Semester.objects.all().first(), overall_satisfaction=overall_satisfaction)
-    
     return redirect("/courseoutcome/")

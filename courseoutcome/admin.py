@@ -4,7 +4,6 @@ from .models import (
     Course,
     CourseOutcome,
     CourseOutcomeResult,
-    CourseOutcomeAverage,
     Department,
     Semester
 )
@@ -16,4 +15,3 @@ admin.site.register(Student)
 admin.site.register(Course)
 admin.site.register(CourseOutcome)
 admin.site.register(CourseOutcomeResult)
-admin.site.register(CourseOutcomeAverage)
