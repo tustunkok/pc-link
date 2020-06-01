@@ -1,19 +1,36 @@
-1,PÇ1,0
-2,PÇ2,1
-3,PÇ3,2
-4,PÇ4,3
-5,PÇ5,4
-6,PÇ7a,7
-7,PÇ7b,8
-8,PÇ8,9
-9,PÇ9a,10
-10,PÇ9b,11
-11,PÇ10a,12
-12,PÇ10b,13
-13,PÇ10c,14
-14,PÇ11a,15
-15,PÇ11b,16
-16,PÇ12,17
-17,PÇ13,18
-18,PÇ6a,5
-19,PÇ6b,6
+1,PÇ1,"Adequate knowledge in mathematics, science and subjects specific to the computer engineering discipline; the ability to apply theoretical and practical knowledge of these areas to complex engineering problems.",CMPE
+2,PÇ2,"The ability to identify, define, formulate and solve complex engineering problems; selecting and applying proper analysis and modeling techniques for this purpose.",CMPE
+3,PÇ3,"The ability to design a complex system, process, device or product under realistic constraints and conditions to meet specific requirements; the ability to apply modern design methods for this purpose.",CMPE
+4,PÇ4,"The ability to develop, select and utilize modern techniques and tools essential for the analysis and determination of complex problems in computer engineering applications; the ability to utilize information technologies effectively.",CMPE
+5,PÇ5,"The ability to design experiments, conduct experiments, gather data, analyze and interpret results for the investigation of complex engineering problems or research topics specific to the computer engineering discipline.",CMPE
+6,PÇ6,The ability to work effectively in inter/inner disciplinary teams ability to work individually.,CMPE
+7,PÇ7a,"Effective oral and writen communication skills in Turkish; the ability to write effective reports and comprehend written reports, to prepare design and production reports, to make effective presentations, to give and to receive clear and understandable instructions.",CMPE
+8,PÇ7b,"The knowledge of at least one foreign language; the ability to write effective reports and comprehend written reports, to prepare design and production reports, to make effective presentations, to give and to receive clear and understandable instructions.",CMPE
+9,PÇ8,"Recognition of the need for lifelong learning; the ability to access information, to follow recent developments in science and technology.",CMPE
+10,PÇ9a,"The ability to behave according to ethical principles, awareness of professional and ethical responsibility",CMPE
+11,PÇ9b,Knowledge of the standards utilized in software engineering applications,CMPE
+12,PÇ10a,"Knowledge on business practices such as project management, risk management and change management",CMPE
+13,PÇ10b,"Awareness about entrepreneurship, innovation",CMPE
+14,PÇ10c,Knowledge on sustainable development,CMPE
+15,PÇ11a,"Knowledge on the effects of software engineering applications on the universal and social dimensions of health, environment and safety",CMPE
+16,PÇ11b,Awareness of the legal consequences of engineering solutions,CMPE
+17,PÇ12,"An ability to describe, analyze and design digital computing and representation systems.",CMPE
+18,PÇ13,Ability to use appropriate computer engineering concepts and software development tools and processes in solving computing problems in computer environment.,CMPE
+19,PÇ1,"Matematik, fen bilimleri ve yazılım mühendisliği disiplinine özgü konularda yeterli bilgi birikimi; bu alanlardaki kuramsal ve uygulamalı bilgileri, karmaşık mühendislik problemlerinde kullanabilme becerisi.",SE
+20,PÇ2,"Karmaşık mühendislik problemlerini saptama, tanımlama, formüle etme ve çözme becerisi; bu amaçla uygun analiz ve modelleme yöntemlerini seçme ve uygulama becerisi.",SE
+21,PÇ3,"Karmaşık bir sistemi, süreci, cihazı veya ürünü gerçekçi kısıtlar ve koşullar altında, belirli gereksinimleri karşılayacak şekilde tasarlama becerisi; bu amaçla modern tasarım yöntemlerini uygulama becerisi.",SE
+22,PÇ4,"Yazılım mühendisliği uygulamalarında karşılaşılan karmaşık problemlerin analizi ve çözümü için gerekli olan modern teknik ve araçları geliştirme, seçme ve kullanma becerisi; bilişim teknolojilerini etkin bir şekilde kullanma becerisi.",SE
+23,PÇ5,"Karmaşık mühendislik problemlerinin veya yazılım mühendisliği disiplinine özgü araştırma konularının incelenmesi için, deney tasarlama, deney yapma, veri toplama, sonuçları analiz etme ve yorumlama becerisi.",SE
+24,PÇ6,Disiplin içi ve çok disiplinli takımlarda etkin biçimde çalışabilme becerisi bireysel çalışma becerisi.,SE
+25,PÇ7a,"Türkçe sözlü ve yazılı etkin iletişim kurma becerisi; etkin rapor yazma ve yazılı raporları anlama, tasarım ve üretim raporları hazırlayabilme, etkin sunum yapabilme, açık ve anlaşılır talimat verme ve alma becerisi",SE
+26,PÇ7b,"En az bir yabancı dil bilgisi; etkin rapor yazma ve yazılı raporları anlama, tasarım ve üretim raporları hazırlayabilme, etkin sunum yapabilme, açık ve anlaşılır talimat verme ve alma becerisi",SE
+27,PÇ8,"Yaşam boyu öğrenmenin gerekliliği bilinci; bilgiye erişebilme, bilim ve teknolojideki gelişmeleri izleme ve kendini sürekli yenileme becerisi.",SE
+28,PÇ9a,"Etik ilkelerine uygun davranma, mesleki ve etik sorumluluk bilinci",SE
+29,PÇ9b,Yazılım mühendisliği uygulamalarında kullanılan standartlar hakkında bilgi,SE
+30,PÇ10a,"Proje yönetimi, risk yönetimi ve değişiklik yönetimi gibi, iş hayatındaki uygulamalar hakkında bilgi",SE
+31,PÇ10b,"Girişimcilik, yenilikçilik hakkında farkındalık",SE
+32,PÇ10c,Sürdürülebilir kalkınma hakkında bilgi.,SE
+33,PÇ11a,"Yazılım mühendisliği uygulamalarının evrensel ve toplumsal boyutlarda sağlık, çevre ve güvenlik üzerindeki etkileri ve çağın mühendislik alanına yansıyan sorunları hakkında bilgi",SE
+34,PÇ11b,Mühendislik çözümlerinin hukuksal sonuçları konusunda farkındalık,SE
+35,PÇ12,"Yazılım alternatiflerini irdeleyerek bilgisayar tabanlı sistemlerin modellenmesi ve tasarımında, algoritma prensiplerini, matematiksel temelleri ve bilgisayar bilimleri teorisini uygulama becerisi.",SE
+36,PÇ13,Yazılım sistemlerinin geliştirme yaşam döngüsünü uygulayarak inşasında mühendislik yaklaşımlarını uygulama becerisi,SE

@@ -10,7 +10,6 @@ urlpatterns = [
     path("report/<department>/<int:semester_id>/", views.CourseOutcomeAverageListView.as_view(), name="report-all"),
     path("report/<department>/<int:semester_id>/<course_outcome>/", views.CourseOutcomeAverageListView.as_view(), name="report-co"),
     path("report/<department>/<int:semester_id>/<course_outcome>/<student>/", views.CourseOutcomeAverageListView.as_view(), name="report-co-stu"),
-    path("report/<department>/<int:semester_id>/<student>/", views.CourseOutcomeAverageListView.as_view(), name="report-stu"),
     path("export/", views.export, name="export"),
     path("populate/", views.populate),
 ]

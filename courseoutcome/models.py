@@ -14,6 +14,14 @@ class Department(models.Model):
     def __str__(self):
         return self.code + " - " + self.name
 
+class CourseOutcome(models.Model):
+    code = models.CharField(max_length=5)
+    description = models.TextField()
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.code + " - " + self.department.code
+
 class Course(models.Model):
     code = models.CharField(max_length=9)
     name = models.CharField(max_length=120)
@@ -32,13 +40,6 @@ class Student(models.Model):
     def __str__(self):
         return self.name
 
-class CourseOutcome(models.Model):
-    order = models.IntegerField()
-    code = models.CharField(max_length=5)
-
-    def __str__(self):
-        return self.code
-
 class CourseOutcomeResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -47,6 +48,6 @@ class CourseOutcomeResult(models.Model):
     semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.student.name + " - " + self.course.code + " - " + \
-            self.course_outcome.code + " - " + str(self.semester) + " - " + \
-            str(self.satisfaction)
+        return self.student.name + " - " + self.course.code + " - [" + \
+            self.course_outcome.code + "-" + self.course_outcome.department.code + \
+            "] - " + str(self.semester) + " - " + str(self.satisfaction)

@@ -1,13 +1,19 @@
 import csv
 import pandas as pd
 
-from django.shortcuts import render, redirect, reverse, get_object_or_404, get_list_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.generic.list import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, Http404
-from django.core.paginator import Paginator
 from django.db.models import Avg
+
+from django.shortcuts import (
+    render,
+    redirect,
+    reverse,
+    get_object_or_404,
+    get_list_or_404
+)
 
 from .models import (
     Student,
@@ -30,15 +36,15 @@ class CourseOutcomeAverageListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         try:
             semester = get_object_or_404(Semester, pk=self.kwargs["semester_id"])
-            department = get_object_or_404(Department, code=self.kwargs["department"])
+            self.department = get_object_or_404(Department, code=self.kwargs["department"])
         except:
             return []
         
-        context_students = Student.objects.filter(department=department)
+        context_students = Student.objects.filter(department=self.department)
         context_cors = CourseOutcomeResult.objects.filter(semester=semester)
 
         try:
-            self.course_outcome = get_object_or_404(CourseOutcome, code=self.kwargs["course_outcome"])
+            self.course_outcome = get_object_or_404(CourseOutcome, code=self.kwargs["course_outcome"], department=self.department)
             context_cors = context_cors.filter(course_outcome=self.course_outcome)
         except:
             # TODO: This code block must be logged.
@@ -54,7 +60,7 @@ class CourseOutcomeAverageListView(LoginRequiredMixin, ListView):
         records = list()
         for student in context_students:
             coas = list()
-            for co in [self.course_outcome] if hasattr(self, "course_outcome") else CourseOutcome.objects.order_by("order"):
+            for co in [self.course_outcome] if hasattr(self, "course_outcome") else CourseOutcome.objects.filter(department=self.department):
                 coa = context_cors.filter(
                     student=student,
                     course_outcome=co).aggregate(Avg("satisfaction"))
@@ -63,7 +69,6 @@ class CourseOutcomeAverageListView(LoginRequiredMixin, ListView):
                 else:
                     coas.append(0)
             records.append([student.no, student.name, student.department.code, coas])
-        
         return records
 
     
@@ -72,27 +77,44 @@ class CourseOutcomeAverageListView(LoginRequiredMixin, ListView):
         if hasattr(self, "course_outcome"):
             context["chosen_cos"] = [self.course_outcome]
         else:
-            context["chosen_cos"] = CourseOutcome.objects.order_by("order")
+            context["chosen_cos"] = CourseOutcome.objects.filter(department=self.department)
         
         context["semesters"] = Semester.objects.all()
         context["departments"] = Department.objects.all()
-        context["outcomes"] = CourseOutcome.objects.order_by("order")
+        context["outcomes"] = CourseOutcome.objects.order_by("department__code")
         context["students"] = Student.objects.all()
         return context
 
 def generate_query(request):
     resulting_page_str = reverse("courseoutcome:report")
+    resulting_page_list = []
 
     if request.POST.get("department_code") and request.POST.get("semester_pk"):
-        resulting_page_str += f"{request.POST.get('department_code')}/{request.POST.get('semester_pk')}/"
+        resulting_page_list.append(request.POST.get('department_code'))
+        resulting_page_list.append(request.POST.get('semester_pk'))
         if request.POST.get("co_code"):
-            resulting_page_str += f"{request.POST.get('co_code')}/"
+            try:
+                dep = request.POST.get('co_code').split("-")[1]
+                co = request.POST.get('co_code').split("-")[0]
+                resulting_page_list.append(co)
+                resulting_page_list[0] = dep
+            except:
+                # TODO: This code block must be logged.
+                resulting_page_list.append(request.POST.get("co_code"))
             if request.POST.get("student_no"):
-                resulting_page_str += f"{request.POST.get('student_no')}/"
+                resulting_page_list.append(request.POST.get('student_no'))
+                try:
+                    resulting_page_list[0] = Student.objects.get(no=request.POST.get('student_no')).department.code
+                except:
+                    pass
         elif request.POST.get("student_no"):
-                resulting_page_str += f"{request.POST.get('student_no')}/"
+                resulting_page_list.append(request.POST.get('student_no'))
+                try:
+                    resulting_page_list[0] = Student.objects.get(no=request.POST.get('student_no')).department.code
+                except:
+                    pass
     
-    return redirect(resulting_page_str)
+    return redirect(resulting_page_str + "/".join(resulting_page_list))
 
 @login_required
 def upload(request):
@@ -172,7 +194,10 @@ def handle_upload(course_code, semester_pk, csvFile):
             
             if student is not None:
                 for co_idx, co in enumerate(course_outcomes):
-                    course_outcome = CourseOutcome.objects.get(code=co)
+                    course_outcome = CourseOutcome.objects.get(
+                        code=co,
+                        department=student.department
+                    )
 
                     course_outcome_result = CourseOutcomeResult.objects.filter(
                         student=student,
@@ -205,7 +230,7 @@ def populate(request):
     ])
 
     with open("migration_files/courseoutcome_student.csv", "r") as csv_file:
-        instances = [Student(no=row[1], name=row[2], graduated_on=row[3] if row[3] != "" else None, department=Department.objects.get(pk=int(row[4])), double_major_student=bool(int(row[5])), vertical_transfer=bool(int(row[6]))) for row in csv.reader(csv_file)]
+        instances = [Student(no=row[1], name=row[2], graduated_on=row[3] if row[3] != "" else None, department=Department.objects.get(code="SE"), double_major_student=bool(int(row[5])), vertical_transfer=bool(int(row[6]))) for row in csv.reader(csv_file)]
 
     Student.objects.bulk_create(instances)
 
@@ -220,7 +245,7 @@ def populate(request):
     Course.objects.bulk_create(instances)
 
     with open("migration_files/courseoutcome_courseoutcome.csv", "r") as csv_file:
-        instances = [CourseOutcome(code=row[1], order=int(row[2])) for row in csv.reader(csv_file)]
+        instances = [CourseOutcome(code=row[1], description=row[2], department=Department.objects.get(code=row[3])) for row in csv.reader(csv_file)]
 
     CourseOutcome.objects.bulk_create(instances)
 

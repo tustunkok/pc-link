@@ -129,5 +129,5 @@ MEDIA_ROOT = '/home/ubuntu/media/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-LOGIN_REDIRECT_URL = 'courseoutcome-home'
+LOGIN_REDIRECT_URL = 'courseoutcome:home'
 LOGIN_URL = 'login'
