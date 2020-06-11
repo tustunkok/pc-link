@@ -29,9 +29,8 @@ services:
       - --collation-server=utf8_unicode_ci
       - --skip-character-set-client-handshake
     volumes:
-      - mariadb-database:/var/lib/mysql
+      - /home/tustunkok/mdbdata/mdb_pclink:/var/lib/mysql
 
 volumes:
-  mariadb-database:
   static-volume:
   media-volume:

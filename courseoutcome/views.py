@@ -77,7 +77,10 @@ class CourseOutcomeAverageListView(LoginRequiredMixin, ListView):
         if hasattr(self, "course_outcome"):
             context["chosen_cos"] = [self.course_outcome]
         else:
-            context["chosen_cos"] = CourseOutcome.objects.filter(department=self.department)
+            try:
+                context["chosen_cos"] = CourseOutcome.objects.filter(department=self.department)
+            except:
+                pass
         
         context["semesters"] = Semester.objects.all()
         context["departments"] = Department.objects.all()
@@ -136,6 +139,7 @@ def upload(request):
 @login_required
 def export(request):
     export_type = request.POST.get("exp_type", False)
+    department = request.POST.get("department")
 
     if export_type == "csv":
         response = HttpResponse(content_type="text/csv")
@@ -150,12 +154,12 @@ def export(request):
         target_file = response if export_type == "csv" else tmp_csv_file
 
         writer = csv.writer(target_file)
-        writer.writerow(["student_id", "name", "department"] + [co.code for co in CourseOutcome.objects.order_by("order").all()])
+        writer.writerow(["student_id", "name", "department"] + [co.code for co in CourseOutcome.objects.filter(department__code=department)])
 
         records = list()
-        for student in Student.objects.all():
+        for student in Student.objects.filter(department__code=department):
             coas = list()
-            for co in CourseOutcome.objects.order_by("order").all():
+            for co in CourseOutcome.objects.filter(department__code=department):
                 coa = CourseOutcomeResult.objects.filter(
                     student=student,
                     course_outcome=co).aggregate(Avg("satisfaction"))
