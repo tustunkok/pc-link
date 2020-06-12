@@ -13,5 +13,5 @@ RUN mkdir -p /home/ubuntu/static /home/ubuntu/media && \
     python manage.py collectstatic
 
 RUN rm -r /pclink/* \
-    apt-get purge -y \
+    apt-get purge \
     build-essential
