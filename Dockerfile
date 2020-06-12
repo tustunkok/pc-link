@@ -1,7 +1,6 @@
 FROM python:3.7-slim
 WORKDIR /pclink/
 COPY . /pclink/
-ARG DJANGO_SECRET_KEY
 
 RUN apt-get update && apt-get install -y \
     build-essential \
