@@ -12,6 +12,6 @@ RUN pip install --no-cache-dir -r /pclink/requirements.txt
 RUN mkdir -p /home/ubuntu/static /home/ubuntu/media && \
     python manage.py collectstatic
 
-RUN rm -r /pclink/* \
-    && apt-get purge -y \
-    build-essential
+RUN rm -r /pclink/* && \
+    apt-get purge -y build-essential && \
+    apt-get autoremove -y
