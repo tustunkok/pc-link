@@ -20,12 +20,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+with open("secret", "r") as secret_file:
+    SECRET_KEY = secret_file.read()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["127.0.0.1", "172.16.238.110", "toliga.ddns.net"]
+ALLOWED_HOSTS = ["127.0.0.1", "172.16.238.110", "toliga.com"]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 6000
 
