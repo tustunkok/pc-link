@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div id="app">
+    <div class="row">
+        <div class="col-8">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name &amp; Surname</th>
+                            <th v-for="program_outcome in displayed_program_outcomes">[[ program_outcome.code ]]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="student in displayed_students">
+                            <td>[[ student.no ]]</td>
+                            <td>[[ student.name ]]</td>
+                            <td v-for="poa in splitPOs(student)">[[ poa.overall_satisfaction ]]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-4 text-center">
+            <h5><br>Choose which records you want to see.<br></h5>
+            <form v-on:submit.prevent="createFilter">
+                <div class="form-group">
+                    <label>Students</label>
+                    <select class="form-control" v-model="selected_student" v-on:change="fiter_changed">
+                        <option value="-1">All Students</option>
+                        <option v-for="student in students" v-bind:value="student.id">[[ student.name ]]</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Program Outcome</label>
+                    <select class="form-control" v-model="selected_po" v-on:change="fiter_changed">
+                        <option value="-1">All Program Outcomes</option>
+                        <option v-for="program_outcome in program_outcomes" v-bind:value="program_outcome.id">[[ program_outcome.code ]]</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <nav aria-label="Page navigation">
+			<ul class="pagination">
+				<li class="page-item">
+					<button type="button" class="page-link" v-if="page != 1" v-on:click="page--">Previous</button>
+				</li>
+				<li class="page-item">
+					<button type="button" class="page-link" v-for="pageNumber in pages.slice(page-1, page+5)" v-on:click="page = pageNumber">[[ pageNumber ]]</button>
+				</li>
+				<li class="page-item">
+					<button type="button" class="page-link" v-on:click="page++" v-if="page < pages.length">Next</button>
+				</li>
+			</ul>
+		</nav>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        <form class="form-inline" action="{% url 'pc-calc:export' %}" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Export all records as:&nbsp;</label>
+                <select class="form-control" name="exp_type">
+                    <option value="csv">Comma separated values (.csv)</option>
+                </select>
+            </div>
+            <button class="btn btn-secondary" type="submit">Download</button>
+        </form>
+    </div>
+</div>
+<script>
+var app = new Vue({
+    delimiters: ['[[', ']]'],
+    el: '#app',
+    data: {
+        students: [],
+        d_students: [],
+        program_outcomes: [],
+        displayed_program_outcomes: [],
+        program_outcome_results: [],
+        program_outcome_averages: [],
+        displayed_program_outcome_averages: [],
+        page: 1,
+        perPage: 9,
+        pages: [],
+        selected_student: '',
+        selected_po: '',
+    },
+    created: async function() {
+        let response = await fetch("{% url 'pc-calc:api-students' %}");
+        this.students = await response.json();
+        this.d_students = this.students;
+
+        response = await fetch("{% url 'pc-calc:api-po' %}");
+        this.program_outcomes = await response.json();
+        this.displayed_program_outcomes = this.program_outcomes;
+
+        response = await fetch("{% url 'pc-calc:api-poresults' %}");
+        this.program_outcome_results = await response.json();
+
+        this.program_outcomes.forEach(program_outcome => {
+            this.students.forEach(student => {
+                program_outcome_results_of_interest = this.program_outcome_results.filter(por => por.student.no === student.no).filter(por => por.program_outcome.code === program_outcome.code);
+                let overall_satisfaction = 0;
+
+                if (program_outcome_results_of_interest.length != 0) {
+                    program_outcome_results_of_interest.forEach(por => {
+                        overall_satisfaction += por.satisfaction;
+                    });
+
+                    overall_satisfaction = Math.round(overall_satisfaction / program_outcome_results_of_interest.length);
+
+                    this.program_outcome_averages.push({
+                        student: student,
+                        program_outcome: program_outcome,
+                        overall_satisfaction: overall_satisfaction
+                    });
+                } else {
+                    this.program_outcome_averages.push({
+                        student: student,
+                        program_outcome: program_outcome,
+                        overall_satisfaction: 'NA'
+                    });
+                }
+            });
+        });
+        this.displayed_program_outcome_averages = this.program_outcome_averages;
+    },
+    methods: {
+        splitPOs: function(student) {
+            if (this.selected_po != '' && this.selected_po != -1) {
+                return this.displayed_program_outcome_averages.filter(poa => poa.student.no == student.no && poa.program_outcome.id == this.selected_po);
+            }
+            return this.displayed_program_outcome_averages.filter(poa => poa.student.no == student.no);
+        },
+        setPages: function() {
+            let numberOfPages = Math.ceil(this.students.length / this.perPage);
+            for (let index = 1; index <= numberOfPages; index++) {
+                this.pages.push(index);
+            }
+        },
+        paginate: function(students) {
+            let page = this.page;
+            let perPage = this.perPage;
+            let from = (page * perPage) - perPage;
+            let to = (page * perPage);
+            return students.slice(from, to);
+        },
+        fiter_changed: function() {
+            let student = this.selected_student;
+            let po = this.selected_po;
+
+            if (po == -1) {
+                this.displayed_program_outcomes = this.program_outcomes;
+                this.displayed_program_outcome_averages = this.program_outcome_averages;
+            } else if (po != '') {
+                this.displayed_program_outcomes = this.program_outcomes.filter(po => po.id == this.selected_po);
+                this.displayed_program_outcome_averages = this.displayed_program_outcome_averages.filter(poa => poa.program_outcome.id == po);
+            }
+
+            if (student == -1) {
+                this.displayed_program_outcome_averages = this.program_outcome_averages;
+                this.d_students = this.students;
+            } else if (student != '') {
+                this.displayed_program_outcome_averages = this.program_outcome_averages.filter(poa => poa.student.id == student);
+                this.d_students = this.students.filter(stu => stu.id == student);
+            }
+            
+            
+        }
+    },
+    computed: {
+        displayed_students: function() {
+            return this.paginate(this.d_students);
+        }
+    },
+    watch: {
+        students: function() {
+            this.setPages();
+        }
+    }
+});
+</script>
+
+{% endblock %}

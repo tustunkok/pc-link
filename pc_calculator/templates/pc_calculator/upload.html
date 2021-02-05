@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="row">
+    <div class="col-8">
+        <h4 class="cover-heading">Hi {{ user.username }},<br>Please upload your course outcome file.</h4>
+        <p>The course outcome file should be in <b>.csv</b> format. You can find an example .csv file opened as a
+            spreadsheet on the side. The first column <em>student_id</em> represents the <b>ID</b> of the student,
+            the second column <em>name</em> represents the <b>name</b> and <b>surname</b> of the student, and the
+            remaining columns are the course outcomes (PÇ1, PÇ2, etc.) of the course. The names of those columns should
+            be the exact codes of the PÇs.</p>
+        <div class="alert alert-warning" role="alert">
+            You have to choose the <b>semester</b> and <b>course</b> that are relevant to the file to be uploaded.
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-lg btn-primary">Upload</button>
+        </form>
+    </div>
+    <div class="col-4">
+        <h4>An Example Input File</h4>
+        <img src="{% static 'pc_calculator/img/sample_input.png' %}" class="img-fluid">
+    </div>
+</div>
+{% endblock %}

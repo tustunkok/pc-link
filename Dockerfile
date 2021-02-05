@@ -1,17 +1,23 @@
-FROM python:3.7-slim
-WORKDIR /pclink/
-COPY . /pclink/
+FROM python:3.8-buster
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    default-libmysqlclient-dev \
-    && rm -rf /var/lib/apt/lists/*
+ARG PC_USER="pclink"
+ARG PC_UID="1000"
+ARG PC_GID="1000"
 
-RUN pip install --no-cache-dir -r /pclink/requirements.txt
+EXPOSE 8000
 
-RUN mkdir -p /home/ubuntu/static /home/ubuntu/media && \
-    python manage.py collectstatic
+USER root
 
-RUN rm -r /pclink/* && \
-    apt-get purge -y build-essential && \
-    apt-get autoremove -y
+COPY . /pc_link_rest/
+
+RUN chmod a+x /pc_link_rest/start.sh && mkdir /pc_link_rest/persist/
+RUN pip install --no-cache-dir -r /pc_link_rest/requirements.txt
+
+RUN groupadd -g $PC_GID $PC_USER && \
+    useradd -M -u $PC_UID -g $PC_GID -s /sbin/nologin $PC_USER && \
+    chown -R $PC_USER:$PC_USER /pc_link_rest/
+
+WORKDIR /pc_link_rest/
+
+USER $PC_USER
+CMD /bin/sh start.sh

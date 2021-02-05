@@ -124,6 +124,10 @@ dmypy.json
 .env
 secret
 mariadb.cnf
+migration_files/
+media/
+static/
+persist/
 
 # End of https://www.gitignore.io/api/django
 #

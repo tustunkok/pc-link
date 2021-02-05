@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<form method="POST">
+    {% csrf_token %}
+    <h2>Are you sure you want to delete {{ object.filename }}?</h2>
+    <button type="submit" class="btn btn-outline-danger">Yes, Delete</button>
+    <a class="btn btn-outline-secondary" href="{% url 'pc-calc:manage' %}">Cancel</a>
+</form>
+
+{% endblock %}

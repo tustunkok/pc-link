@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="row">
+    <ul>
+        
+    </ul>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">File Name</th>
+            <th scope="col">Semester</th>
+            <th scope="col">Operation</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for file in page_obj %}
+            <tr>
+                <td>{{ file.filename }}</td>
+                <td>{{ file.semester }}</td>
+                <td><a href="{% url 'pc-calc:update' file.id %}">Edit</a> | <a href="{% url 'pc-calc:delete' file.id %}">Delete</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<nav aria-label="Page navigation example">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.number|add:"-1" }}</a></li>
+        {% endif %}
+        <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.number|add:"1" }}</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock %}
