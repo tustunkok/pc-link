@@ -17,6 +17,10 @@ from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 
+import logging
+
+logger = logging.getLogger('pc_link_custom_logger')
+
 class ProgramOutcomeResultList(generics.ListAPIView):
     queryset = ProgramOutcomeResult.objects.all()
     serializer_class = ProgramOutcomeResultSerializer
@@ -37,8 +41,10 @@ class ProgramOutcomeList(generics.ListAPIView):
 class ProgramOutcomeFileListView(LoginRequiredMixin, generic.ListView):
     model = ProgramOutcomeFile
     template_name = 'pc_calculator/manage.html'
-    ordering = ['-date_uploaded']
     paginate_by = 10
+
+    def get_queryset(self):
+        return ProgramOutcomeFile.objects.filter(user=self.request.user).order_by('-date_uploaded')
 
 class ProgramOutcomeFileUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = ProgramOutcomeFile
@@ -54,7 +60,7 @@ class ProgramOutcomeFileUpdateView(LoginRequiredMixin, generic.UpdateView):
         course = form.cleaned_data['course']
         pc_file = form.cleaned_data['pc_file']
 
-        if handle_upload(self.request, course.code, semester.id, pc_file, self.request.user, updated=True):
+        if handle_upload(self.request, course.code, semester.id, pc_file, self.request.user, logger, updated=True):
             messages.success(self.request, 'Program Outcome file is successfuly updated.')
         else:
             messages.warning(self.request, 'No student from the department exists in the uploaded file.')
@@ -81,9 +87,38 @@ def upload_program_outcome_file(request):
         semester_pk = form.cleaned_data['semester']
         csvFile = form.cleaned_data['outcome_file']
 
-        if handle_upload(request, course_code, semester_pk, csvFile, request.user):
+        if handle_upload(request, course_code, semester_pk, csvFile, request.user, logger):
             messages.success(request, 'Program Outcome file is successfuly uploaded.')
         else:
             messages.warning(request, 'No student from the department exists in the uploaded file.')
     
     return render(request, 'pc_calculator/upload.html', { 'form': form })
+
+@login_required
+def export(request):
+    logger.info(f'Export requested by {request.user}.')
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="report.csv"'
+
+    target_file = response
+
+    writer = csv.writer(target_file)
+    writer.writerow(["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
+
+    records = list()
+    for student in Student.objects.all():
+        poas = list()
+        for po in ProgramOutcome.objects.all():
+            por = ProgramOutcomeResult.objects.filter(
+                student=student,
+                program_outcome=po).aggregate(Avg("satisfaction"))
+            if por["satisfaction__avg"] is not None:
+                poas.append(round(por["satisfaction__avg"]))
+            else:
+                poas.append('NA')
+
+        records.append([student.no, student.name] + poas)
+
+    writer.writerows(records)
+
+    return response

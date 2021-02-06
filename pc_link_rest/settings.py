@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -135,4 +136,34 @@ AUTH_USER_MODEL = 'pc_calculator.User'
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime} {levelname}]  {message}',
+            'style': '{'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'persist' / 'pc-link.log',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'pc_link_custom_logger': {
+            'handlers': ['file'],
+            'level': 'DEBUG'
+        }
+    }
 }

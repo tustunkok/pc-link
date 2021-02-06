@@ -11,94 +11,80 @@ from django.http import HttpResponse
 from django.db.models import Avg
 from charset_normalizer import CharsetNormalizerMatches as CnM
 
-def handle_upload(request, course_code, semester_pk, csvFile, user, updated=False):
+def handle_upload(request, course_code, semester_pk, csvFile, user, logger, updated=False):
     success = False
     course = get_object_or_404(Course, code=course_code)
     semester = get_object_or_404(Semester, pk=semester_pk)
 
+    file_type = os.path.splitext(str(csvFile))[1].lower()
+    if file_type != '.csv':
+        messages.error(request, f"Wrong file type: {file_type}. It should be a CSV file.")
+        logger.info(f'File type found to be {file_type} for the uploaded file {csvFile}, it should be CSV.')
+        return success
+
     if not updated:
         program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=user, semester=semester, course=course)
+        logger.debug(f'New ProgramOutcomeFile record created with details {program_outcome_file}.')
     else:
         program_outcome_file = ProgramOutcomeFile.objects.get(user=user, semester=semester, course=course)
+        logger.debug(f'Existing ProgramOutcomeFile record is updated with details {program_outcome_file}.')
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
-        result = str(CnM.from_bytes(contents_byte_str, cp_isolation=['cp1254', 'utf_8']).best().first()).strip()
+        det_result = CnM.from_bytes(contents_byte_str, cp_isolation=['cp1254', 'utf_8']).best().first()
+        logger.debug(f'The encoding of uploaded file {program_outcome_file.pc_file} is determined as {det_result.could_be_from_charset[0]}.')
 
-    # with open(program_outcome_file.pc_file.path, newline='', encoding=result['encoding']) as csv_file:
-        dialect = csv.Sniffer().sniff(result[:1024] or result, delimiters=[',', ';'])
-        # csv_file.seek(0)
-        result = result.split('\n')
+    result = str(det_result).strip()
 
-        first_row = True
-        for row in csv.reader(result, dialect):
-            if first_row:
-                first_row = False
-                program_outcomes = row[2:]
-                continue
+    dialect = csv.Sniffer().sniff(result[:1024] or result, delimiters=[',', ';'])
+    logger.debug(f"The delimiter of uploaded file {program_outcome_file.pc_file} is determined as '{dialect.delimiter}'.")
+    result = result.split('\n')
 
-            student = Student.objects.filter(no=row[0]).first()
-            
-            if student is not None:
-                for po_idx, po in enumerate(program_outcomes):
-                    try:
-                        program_outcome = ProgramOutcome.objects.get(
-                            code=po.strip()
-                        )
-                    except:
-                        messages.error(request, f"No program outcome found named as {po}.")
-                        success = False
-                        return success
+    first_row = True
+    for row in csv.reader(result, dialect):
+        if first_row:
+            first_row = False
+            program_outcomes = row[2:]
+            continue
 
-                    program_outcome_result = ProgramOutcomeResult.objects.filter(
+        student = Student.objects.filter(no=row[0]).first()
+        
+        if student is not None:
+            for po_idx, po in enumerate(program_outcomes):
+                try:
+                    program_outcome = ProgramOutcome.objects.get(
+                        code=po.strip()
+                    )
+                except:
+                    messages.error(request, f"No program outcome found named as {po}.")
+                    #logger.info(f"No program outcome found named as {po}.")
+                    success = False
+                    return success
+
+                program_outcome_result = ProgramOutcomeResult.objects.filter(
+                    student=student,
+                    course=course,
+                    program_outcome=program_outcome,
+                    semester=semester).first()
+
+                sat_input_value = 1 if row[po_idx + 2] == "1" or row[po_idx + 2] == "M" else 0
+
+                if program_outcome_result:
+                    logger.debug(f'Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
+                    program_outcome_result.satisfaction = sat_input_value
+                    program_outcome_result.save()
+                else:
+                    program_outcome_result = ProgramOutcomeResult.objects.create(
                         student=student,
                         course=course,
                         program_outcome=program_outcome,
-                        semester=semester).first()
-
-                    sat_input_value = 1 if row[po_idx + 2] == "1" or row[po_idx + 2] == "M" else 0
-
-                    if program_outcome_result:
-                        program_outcome_result.satisfaction = sat_input_value
-                        program_outcome_result.save()
-                    else:
-                        ProgramOutcomeResult.objects.create(
-                            student=student,
-                            course=course,
-                            program_outcome=program_outcome,
-                            semester=semester,
-                            satisfaction=sat_input_value)
-                else:
-                    success = True
-    return success
-
-def export(request):
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="report.csv"'
-
-    # with open("/tmp/csv_file.csv", "w") as tmp_csv_file:
-    target_file = response
-
-    writer = csv.writer(target_file)
-    writer.writerow(["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
-
-    records = list()
-    for student in Student.objects.all():
-        poas = list()
-        for po in ProgramOutcome.objects.all():
-            por = ProgramOutcomeResult.objects.filter(
-                student=student,
-                program_outcome=po).aggregate(Avg("satisfaction"))
-            if por["satisfaction__avg"] is not None:
-                poas.append(round(por["satisfaction__avg"]))
+                        semester=semester,
+                        satisfaction=sat_input_value)
+                    logger.debug(f'New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
             else:
-                poas.append('NA')
-
-        records.append([student.no, student.name] + poas)
-
-    writer.writerows(records)
-
-    return response
+                success = True
+                logger.info(f'ProgramOutcomeResult record for {program_outcome_result} is created or updated successfully.')
+    return success
 
 def populate_students(request):
     with open("migration_files/cmpe-students.csv", "r") as csv_file:
