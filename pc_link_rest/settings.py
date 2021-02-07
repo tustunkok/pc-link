@@ -144,26 +144,36 @@ LOGGING = {
     'formatters': {
         'verbose': {
             'format': '[{asctime} {levelname}]  {message}',
+            'datefmt': '%d/%b/%Y %H:%M:%S',
+            'style': '{'
+        },
+        'original': {
+            'format': '[{asctime}] {message}',
+            'datefmt': '%d/%b/%Y %H:%M:%S',
             'style': '{'
         }
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
+            'formatter': 'original'
         },
         'file': {
-            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'persist' / 'pc-link.log',
             'formatter': 'verbose'
         }
     },
     'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
         'pc_link_custom_logger': {
             'handlers': ['file'],
-            'level': 'DEBUG'
+            'level': 'DEBUG',
+            'propagate': False
         }
     }
 }

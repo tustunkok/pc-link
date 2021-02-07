@@ -57,7 +57,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
                     )
                 except:
                     messages.error(request, f"No program outcome found named as {po}.")
-                    #logger.info(f"No program outcome found named as {po}.")
+                    logger.info(f"No program outcome found named as {po}.")
                     success = False
                     return success
 
@@ -84,6 +84,8 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
             else:
                 success = True
                 logger.info(f'ProgramOutcomeResult record for {program_outcome_result} is created or updated successfully.')
+        else:
+            logger.debug(f'No student found with an id {row[0]}.')
     return success
 
 def populate_students(request):
