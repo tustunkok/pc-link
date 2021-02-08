@@ -134,6 +134,14 @@ LOGIN_REDIRECT_URL = 'pc-calc:home'
 LOGIN_URL = 'accounts/login/'
 AUTH_USER_MODEL = 'pc_calculator.User'
 
+EMAIL_HOST = 'in-v3.mailjet.com'
+EMAIL_PORT = 587
+with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:
+    EMAIL_HOST_USER = f.readline().strip()
+    EMAIL_HOST_PASSWORD = f.readline().strip()
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'tolgaustunkok@hotmail.com'
+
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'
 }

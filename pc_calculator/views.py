@@ -4,6 +4,7 @@ from django.views import generic
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.mail import send_mail
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -17,6 +18,7 @@ from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 
+import datetime
 import logging
 
 logger = logging.getLogger('pc_link_custom_logger')
@@ -60,7 +62,9 @@ class ProgramOutcomeFileUpdateView(LoginRequiredMixin, generic.UpdateView):
         course = form.cleaned_data['course']
         pc_file = form.cleaned_data['pc_file']
 
-        if handle_upload(self.request, course.code, semester.id, pc_file, self.request.user, logger, updated=True):
+        upload_result = handle_upload(self.request, course.code, semester.id, pc_file, self.request.user, logger, updated=True)
+
+        if upload_result[0]:
             messages.success(self.request, 'Program Outcome file is successfuly updated.')
         else:
             messages.warning(self.request, 'No student from the department exists in the uploaded file.')
@@ -91,8 +95,28 @@ def upload_program_outcome_file(request):
         semester_pk = form.cleaned_data['semester']
         csvFile = form.cleaned_data['outcome_file']
 
-        if handle_upload(request, course_code, semester_pk, csvFile, request.user, logger):
+        upload_result = handle_upload(request, course_code, semester_pk, csvFile, request.user, logger)
+
+        if upload_result[0]:
             messages.success(request, 'Program Outcome file is successfuly uploaded.')
+            send_mail(
+                f'[PÇ-Link Program Outcome Upload]: {course_code}',
+f'''
+The following file has been SUBMITTED.
+======================================================================
+Uploaded By: {request.user}
+======================================================================
+File Name: {csvFile}
+Number of Recorded Students: {upload_result[1]}
+======================================================================
+Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
+======================================================================
+''',
+                'tolgaustunkok@hotmail.com',
+                [request.user.email],
+                fail_silently=False
+            )
+            logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
         else:
             messages.warning(request, 'No student from the department exists in the uploaded file.')
     

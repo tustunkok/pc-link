@@ -13,31 +13,32 @@ from charset_normalizer import CharsetNormalizerMatches as CnM
 
 def handle_upload(request, course_code, semester_pk, csvFile, user, logger, updated=False):
     success = False
+    num_of_students = 0
     course = get_object_or_404(Course, code=course_code)
     semester = get_object_or_404(Semester, pk=semester_pk)
 
     file_type = os.path.splitext(str(csvFile))[1].lower()
     if file_type != '.csv':
         messages.error(request, f"Wrong file type: {file_type}. It should be a CSV file.")
-        logger.info(f'File type found to be {file_type} for the uploaded file {csvFile}, it should be CSV.')
-        return success
+        logger.info(f'[User: {request.user}] - File type found to be {file_type} for the uploaded file {csvFile}, it should be CSV.')
+        return (success, num_of_students)
 
     if not updated:
         program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=user, semester=semester, course=course)
-        logger.debug(f'New ProgramOutcomeFile record created with details {program_outcome_file}.')
+        logger.debug(f'[User: {request.user}] - New ProgramOutcomeFile record created with details {program_outcome_file}.')
     else:
         program_outcome_file = ProgramOutcomeFile.objects.get(user=user, semester=semester, course=course)
-        logger.debug(f'Existing ProgramOutcomeFile record is updated with details {program_outcome_file}.')
+        logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeFile record is updated with details {program_outcome_file}.')
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
         det_result = CnM.from_bytes(contents_byte_str, cp_isolation=['cp1254', 'utf_8']).best().first()
-        logger.debug(f'The encoding of uploaded file {program_outcome_file.pc_file} is determined as {det_result.could_be_from_charset[0]}.')
+        logger.debug(f'[User: {request.user}] - The encoding of uploaded file {program_outcome_file.pc_file} is determined as {det_result.could_be_from_charset[0]}.')
 
     result = str(det_result).strip()
 
     dialect = csv.Sniffer().sniff(result[:1024] or result, delimiters=[',', ';'])
-    logger.debug(f"The delimiter of uploaded file {program_outcome_file.pc_file} is determined as '{dialect.delimiter}'.")
+    logger.debug(f"[User: {request.user}] - The delimiter of uploaded file {program_outcome_file.pc_file} is determined as '{dialect.delimiter}'.")
     result = result.split('\n')
 
     first_row = True
@@ -57,9 +58,9 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
                     )
                 except:
                     messages.error(request, f"No program outcome found named as {po}.")
-                    logger.info(f"No program outcome found named as {po}.")
+                    logger.info(f"[User: {request.user}] - No program outcome found named as {po}.")
                     success = False
-                    return success
+                    return (success, num_of_students)
 
                 program_outcome_result = ProgramOutcomeResult.objects.filter(
                     student=student,
@@ -70,7 +71,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
                 sat_input_value = 1 if row[po_idx + 2] == "1" or row[po_idx + 2] == "M" else 0
 
                 if program_outcome_result:
-                    logger.debug(f'Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
+                    logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
                     program_outcome_result.satisfaction = sat_input_value
                     program_outcome_result.save()
                 else:
@@ -80,13 +81,14 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
                         program_outcome=program_outcome,
                         semester=semester,
                         satisfaction=sat_input_value)
-                    logger.debug(f'New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
+                    logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
             else:
                 success = True
-                logger.info(f'ProgramOutcomeResult record for {program_outcome_result} is created or updated successfully.')
+                logger.info(f'[User: {request.user}] - ProgramOutcomeResult record for {program_outcome_result} is created or updated successfully.')
+                num_of_students += 1
         else:
-            logger.debug(f'No student found with an id {row[0]}.')
-    return success
+            logger.debug(f'[User: {request.user}] - No student found with an id {row[0]}.')
+    return (success, num_of_students)
 
 def populate_students(request):
     with open("migration_files/cmpe-students.csv", "r") as csv_file:
