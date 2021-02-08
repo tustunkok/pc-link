@@ -74,9 +74,12 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
     template_name = 'pc_calculator/confirm_delete.html'
     permission_classes = [IsAuthenticated]
 
+def help(request):
+    return render(request, 'pc_calculator/help.html')
+
 @login_required
 def report_view(request):
-    return render(request, 'pc_calculator/report.html', {})
+    return render(request, 'pc_calculator/report.html')
 
 @login_required
 def upload_program_outcome_file(request):

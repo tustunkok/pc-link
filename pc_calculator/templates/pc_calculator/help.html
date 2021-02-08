@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h1>PÇ-Link User Manual</h1>
+
+<div class="alert alert-warning" role="alert">
+    Any found bug or suspicious behaviour should be reported on 
+    <a href="http://bugs.toliga.com/">http://bugs.toliga.com/</a> as a new issue. This process is necessary to debug and 
+    keep the software healthy, available, and working throughout the entire alpha-beta period.
+</div>
+
+<p>PÇ-Link application is a web application for easy calculation and management of students’ program outcome resuls and 
+averages. The current hosting server is placed in the Frankfurt/Germany, and the VPS service is provided by 
+DigitalOcean. The source code is located in a private repository on Atlassian BitBucket.</p>
+
+<p>This manual defines the basic interactions with the PÇ-Link application.</p>
+
+<ol>
+    <li>
+        <p>When a user enters the <a href="http://toliga.com/se/">http://toliga.com/se/</a> or 
+        <a href="http://toliga.com/cmpe/">http://toliga.com/cmpe/</a>, the page shown in Figure 1 is presented. This page is 
+        the main page of the application.
+        
+        <img src="{% static 'pc_calculator/img/login_page.png' %}" class="img-fluid"></p>
+        
+        <p>In the main page, several options/functions are served depending on what the user want to do.</p>
+
+        <ul>
+            <li><strong>Upload Course Outcome File:</strong> <u>Login required.</u> This option redirects you to the CSV upload page.</li>
+            <li><strong>Create Report:</strong> <u>Login required.</u> This option redirects you to the report creationg page. 
+            Also you can download a CSV file containing all students with their respected course outcome averages.</li>
+            <li><strong>Manage Uploaded Files:</strong> <u>Login required.</u> This option redirects you to a page which you can 
+            mange the previously uploaded files. You can delete or edit the existing uploads.</li>
+            <li><strong>Help:</strong> The online version of the PÇ-Link User Manual document.</li>
+            <li><strong>Login:</strong> Login page.</li>
+            <li><strong>Register:</strong> Registration page.</li>
+        </ul>
+    </li>
+    <li>
+        <p>Users must be logged in to the system to make uploads or reporting or any change.  The registration process 
+        is started by clicking to the Register button from top navigation bar. This button redirects to a registration 
+        page shown in Figure 2.</p>
+
+        <img src="{% static 'pc_calculator/img/register_page.png' %}" class="img-fluid"></p>
+
+        <p>All fields are required. <strong>Note that, this page will be disabled when all previously defined users are 
+        registered.</strong></p>
+    </li>
+    <li>
+        <p>After the registration process, users will be redirected to a page shown in Figure 1. Login page is 
+        straightforward. When users log into the system, they can interact all of the defined functionality.</p>
+
+        <p><strong><em>There is no SSL/TLS encrpytion in the site traffic. Users should be careful about their choice of 
+        password since the hash of the password can be stolen with the man-in-the-middle attacks.</em></strong></p>
+    </li>
+    <li>
+        <p>A logged in user is automatically redirected to course outcome upload page as shown in Figure 3.</p>
+
+        <img src="{% static 'pc_calculator/img/uploads_page.png' %}" class="img-fluid"></p>
+
+        <p>In this page, all form elements are required. User must choose the related course with the CSV file from 
+        <strong>Select a course*</strong> combo box, the related semester from <strong>Select a semester:*</strong> combo box1 and upload 
+        the CSV file from the <strong>Upload the PÇ File:*</strong> file upload field.</p>
+
+        <p>The CSV file has to be in a certain and consistent format. The format structure is explained in the page 
+        itself and is quoted below.</p>
+
+        <blockquote class="blockquote">
+            <p>The course outcome file should be in .csv format. You can find an example .csv file opened as a 
+            spreadsheet on the side. The first column <u>student_id</u> represents the <strong>ID</strong> of the student, the 
+            second column <u>name</u> represents the <strong>name and surname</strong> of the student, and the remaining columns 
+            are the course outcomes (PÇ1, PÇ2, etc.) of the course. <strong>The names of course outcome columns should be the 
+            exact codes (case-sensitive) of the PÇs (e.g. PÇ1, PÇ7a, PÇ7b, etc.).</strong></p>
+        </blockquote>
+
+        <p>When the user presses the upload button, CSV file is sent to the server. There is no need to seperate the 
+        students of different departments. PÇ-Link can differentiate the students from CMPE and SE depending on the 
+        uploaded site. This process is automatically handled.</p>
+    </li>
+    <li>
+        <p>A user can create filtered reports and export unfiltered reports by clicking the Create Report button from 
+        the top naviagtion bar.</p>
+
+        <img src="{% static 'pc_calculator/img/report_page.png' %}" class="img-fluid"></p>
+
+        <p>In this page, a user can create and display reports filtered by the filtering options shown in right side of 
+        Figure 5. Notice that, these filters are not going to be applied when exporting a CSV or XLSX.</p>
+
+        <p>Users can choose the details of the record they want to create and give a overall course outcome value. If 
+        the record already exists, then the existing record is updated, otherwise a new record is created.</p>
+    </li>
+    <li>
+        <p>Bug reports and other issues can be created in the following link by self-registered reporters.</p>
+        <p class="text-center"><a href="http://bugs.toliga.com/">http://bugs.toliga.com/</a></p>
+        <p>For all other problems with the system, send an email to 
+        <a href="mailto:tolga.ustunkok@atilim.edu.tr">tolga.ustunkok@atilim.edu.tr</a>.</p>
+    </li>
+</ol>
+
+{% endblock %}
