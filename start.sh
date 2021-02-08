@@ -8,5 +8,5 @@ if [ ! -f "$DATABASE_FILE" ]; then
     python manage.py createsuperuser --noinput
 fi
 
-python manage.py collectstatic
+python manage.py collectstatic --clear --noinput
 uwsgi --ini django.ini

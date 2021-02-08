@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.views import generic
 from django.urls import reverse_lazy
@@ -20,6 +20,7 @@ from pc_calculator.utils import *
 
 import datetime
 import logging
+import csv
 
 logger = logging.getLogger('pc_link_custom_logger')
 
@@ -47,6 +48,11 @@ class ProgramOutcomeFileListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         return ProgramOutcomeFile.objects.filter(user=self.request.user).order_by('-date_uploaded')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['semesters'] = Semester.objects.all()
+        return context
 
 class ProgramOutcomeFileUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = ProgramOutcomeFile
@@ -148,5 +154,26 @@ def export(request):
         records.append([student.no, student.name] + poas)
 
     writer.writerows(records)
+
+    return response
+
+def course_report(request):
+    logger.info(f'The list of not uploaded courses is requested by {request.user}.')
+    semester_id = request.POST['semester']
+    semester = get_object_or_404(Semester, pk=semester_id)
+
+    uploaded_courses = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
+
+    not_uploaded_courses = Course.objects.exclude(pk__in=uploaded_courses)
+    logger.debug(f'The list of not uploaded courses is {not_uploaded_courses} for semester {semester}.')
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="NotUploadedCourses.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Code', 'Name', 'Semester'])
+
+    for course in not_uploaded_courses:
+        writer.writerow([course.code, course.name, str(semester)])
 
     return response

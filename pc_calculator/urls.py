@@ -13,6 +13,7 @@ urlpatterns = [
     path('upload/', views.upload_program_outcome_file, name='upload'),
     path('', views.upload_program_outcome_file, name='home'),
     path('export/', views.export, name='export'),
+    path('course_report/', views.course_report, name='course_report'),
     path('help/', views.help, name='help'),
     path('manage/', views.ProgramOutcomeFileListView.as_view(), name='manage'),
     path('manage/<int:pk>/update/', views.ProgramOutcomeFileUpdateView.as_view(), name='update'),
