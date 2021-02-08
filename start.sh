@@ -1,7 +1,6 @@
 #!/bin/sh
 
 DATABASE_FILE=./persist/db.sqlite3
-STATIC_DIR=./static/
 
 if [ ! -f "$DATABASE_FILE" ]; then
     python manage.py makemigrations
@@ -9,8 +8,5 @@ if [ ! -f "$DATABASE_FILE" ]; then
     python manage.py createsuperuser --noinput
 fi
 
-if [ ! -d "$STATIC_DIR"  ]; then
-    python manage.py collectstatic
-fi
-
+python manage.py collectstatic
 uwsgi --ini django.ini

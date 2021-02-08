@@ -1,4 +1,5 @@
 *.zip
+*.xcf
 .git/
 .gitignore
 secret_key.txt

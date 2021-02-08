@@ -83,6 +83,7 @@ def upload_program_outcome_file(request):
     form = ProgramOutcomeForm(request.POST or None, request.FILES or None)
 
     if form.is_valid():
+        logger.info(f'PO file upload requested by {request.user}.')
         course_code = form.cleaned_data['course']
         semester_pk = form.cleaned_data['semester']
         csvFile = form.cleaned_data['outcome_file']

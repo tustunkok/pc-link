@@ -159,9 +159,11 @@ LOGGING = {
             'formatter': 'original'
         },
         'file': {
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR / 'persist' / 'pc-link.log',
-            'formatter': 'verbose'
+            'formatter': 'verbose',
+            'maxBytes': 8388608,
+            'backupCount': 5
         }
     },
     'loggers': {

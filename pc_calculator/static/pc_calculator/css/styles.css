@@ -1,0 +1,21 @@
+.pagination {
+  justify-content: center;
+}
+
+.jumbotron {
+  background-image: url("../img/jumbotron-bg.png");
+  background-size: cover;
+}
+
+button.page-link {
+	display: inline-block;
+}
+button.page-link {
+    font-size: 20px;
+    color: #29b3ed;
+    font-weight: 500;
+}
+.offset{
+  width: 500px !important;
+  margin: 20px auto;  
+}
