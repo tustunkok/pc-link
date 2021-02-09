@@ -111,10 +111,8 @@ f'''
 The following file has been SUBMITTED.
 ======================================================================
 Uploaded By: {request.user}
-======================================================================
 File Name: {csvFile}
 Number of Recorded Students: {upload_result[1]}
-======================================================================
 Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ======================================================================
 ''',
@@ -152,28 +150,17 @@ def export(request):
                 poas.append('NA')
 
         records.append([student.no, student.name] + poas)
-
     writer.writerows(records)
 
     return response
 
+@login_required
 def course_report(request):
     logger.info(f'The list of not uploaded courses is requested by {request.user}.')
     semester_id = request.POST['semester']
     semester = get_object_or_404(Semester, pk=semester_id)
-
     uploaded_courses = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
-
     not_uploaded_courses = Course.objects.exclude(pk__in=uploaded_courses)
+
     logger.debug(f'The list of not uploaded courses is {not_uploaded_courses} for semester {semester}.')
-
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="NotUploadedCourses.csv"'
-
-    writer = csv.writer(response)
-    writer.writerow(['Code', 'Name', 'Semester'])
-
-    for course in not_uploaded_courses:
-        writer.writerow([course.code, course.name, str(semester)])
-
-    return response
+    return render(request, 'pc_calculator/not_uploaded_courses.html', {'semester': semester, 'ncourses': not_uploaded_courses})
