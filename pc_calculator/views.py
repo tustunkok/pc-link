@@ -6,7 +6,6 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
-from django.db.models import Q
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -50,7 +49,9 @@ class ProgramOutcomeFileListView(LoginRequiredMixin, generic.ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return ProgramOutcomeFile.objects.filter(user=self.request.user).order_by('-date_uploaded')
+        if self.request.user.username != 'tustunkok':
+            return ProgramOutcomeFile.objects.filter(user=self.request.user).order_by('-date_uploaded')
+        return ProgramOutcomeFile.objects.order_by('-date_uploaded')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

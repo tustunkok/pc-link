@@ -32,7 +32,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
-        det_result = CnM.from_bytes(contents_byte_str, cp_isolation=['cp1254', 'utf_8']).best().first()
+        det_result = CnM.from_bytes(contents_byte_str, cp_isolation=['cp1254', 'utf_8', 'cp1252']).best().first()
         logger.debug(f'[User: {request.user}] - The encoding of uploaded file {program_outcome_file.pc_file} is determined as {det_result.could_be_from_charset[0]}.')
 
     result = str(det_result).strip()
