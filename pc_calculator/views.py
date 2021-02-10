@@ -20,9 +20,11 @@ from pc_calculator.forms import *
 from pc_calculator.utils import *
 from pc_link_rest.settings import MEDIA_ROOT
 
+import pandas as pd
 import datetime
 import logging
 import csv
+import io
 
 logger = logging.getLogger('pc_link_custom_logger')
 
@@ -148,13 +150,7 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 @login_required
 def export(request):
     logger.info(f'Export requested by {request.user}.')
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="report.csv"'
-
-    target_file = response
-
-    writer = csv.writer(target_file)
-    writer.writerow(["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
+    file_type = request.POST['exp_type']
 
     records = list()
     for student in Student.objects.all():
@@ -176,7 +172,22 @@ def export(request):
                     poas.append(0)
 
         records.append([student.no, student.name] + poas)
-    writer.writerows(records)
+    
+    report_df = pd.DataFrame(records, columns=["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
+
+    if file_type == 'xlsx':
+        xlsx_buffer = io.BytesIO()
+        with pd.ExcelWriter(xlsx_buffer) as xlwriter:
+            report_df.to_excel(xlwriter)
+        xlsx_buffer.seek(0)
+        response = HttpResponse(xlsx_buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
+    elif file_type == 'csv':
+        csv_buffer = io.StringIO()
+        report_df.to_csv(csv_buffer, index=False)
+        csv_buffer.seek(0)
+        response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
+        response["Content-Disposition"] = 'attachment; filename="report.csv"'
 
     return response
 
@@ -185,8 +196,7 @@ def course_report(request):
     logger.info(f'The list of not uploaded courses is requested by {request.user}.')
     semester_id = request.POST['semester']
     semester = get_object_or_404(Semester, pk=semester_id)
-    uploaded_courses = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
-    not_uploaded_courses = Course.objects.exclude(pk__in=uploaded_courses)
+    uploaded_courses_set = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
 
     logger.debug(f'The list of not uploaded courses is {not_uploaded_courses} for semester {semester}.')
-    return render(request, 'pc_calculator/not_uploaded_courses.html', {'semester': semester, 'ncourses': not_uploaded_courses})
+    return render(request, 'pc_calculator/not_uploaded_courses.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})

@@ -11,16 +11,28 @@
                     <th scope="col">Code</th>
                     <th scope="col">Name</th>
                     <th scope="col">Semester</th>
+                    <th scope="col">Upload Status</th>
                 </tr>
             </thead>
             <tbody>
-                {% for course in ncourses %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ course.code }}</td>
-                        <td>{{ course.name }}</td>
-                        <td>{{ semester }}</td>
-                    </tr>
+                {% for course in courses %}
+                    {% if course.id in ucourses_ids %}
+                        <tr class="table-success">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ course.code }}</td>
+                            <td>{{ course.name }}</td>
+                            <td>{{ semester }}</td>
+                            <td>Uploaded</td>
+                        </tr>
+                    {% else %}
+                        <tr class="table-danger">
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ course.code }}</td>
+                            <td>{{ course.name }}</td>
+                            <td>{{ semester }}</td>
+                            <td>Not Uploaded</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
         </table>
