@@ -97,11 +97,11 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
         self.object = self.get_object()
 
         po_results = ProgramOutcomeResult.objects.filter(semester=self.object.semester, course=self.object.course)
-        os.remove(os.path.join(MEDIA_ROOT, str(self.object.pc_file)))
+        if os.path.exists(os.path.join(MEDIA_ROOT, str(self.object.pc_file))):
+            os.remove(os.path.join(MEDIA_ROOT, str(self.object.pc_file)))
         po_results.delete()
 
         return super().delete(request, *args, **kwargs)
-        # return redirect(self.get_success_url())
 
 def help(request):
     return render(request, 'pc_calculator/help.html')

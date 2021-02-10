@@ -46,14 +46,14 @@
         <form class="form-inline" action="{% url 'pc-calc:course_report' %}" method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label>Download course report:&nbsp;</label>
+                <label>Show not uploaded courses for the semester:&nbsp;</label>
                 <select class="form-control" name="semester">
                     {% for sem in semesters %}
                         <option value="{{ sem.id }}">{{ sem }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <button class="btn btn-secondary" type="submit">Download</button>
+            <button class="btn btn-secondary" type="submit">Show</button>
         </form>
     </div>
 </div>
