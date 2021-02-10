@@ -4,7 +4,14 @@
 
 <form method="POST">
     {% csrf_token %}
-    <h2>Are you sure you want to delete {{ object.filename }}?</h2>
+    <h3>Are you sure you want to delete {{ object.filename }}?</h3>
+    <p>This will also delete the following Program Outcome Result records:</p>
+    <ul>
+        {% for por in por_objects %}
+            <li>{{ por }}</li>
+        {% endfor %}
+    </ul>
+    <p>Total of {{ por_objects|length }} records will be deleted.</p>
     <button type="submit" class="btn btn-outline-danger">Yes, Delete</button>
     <a class="btn btn-outline-secondary" href="{% url 'pc-calc:manage' %}">Cancel</a>
 </form>

@@ -9,6 +9,7 @@
             <thead>
                 <tr>
                     <th scope="col">File Name</th>
+                    <th scope="col">Course</th>
                     <th scope="col">Semester</th>
                     <th scope="col">Operation</th>
                 </tr>
@@ -17,8 +18,9 @@
                 {% for file in page_obj %}
                     <tr>
                         <td>{{ file.filename }}</td>
+                        <td>{{ file.course }}</td>
                         <td>{{ file.semester }}</td>
-                        <td><a href="{% url 'pc-calc:update' file.id %}">Edit</a> | <a href="{% url 'pc-calc:delete' file.id %}">Delete (<b>Do not use!</b>)</a></td>
+                        <td><a href="{% url 'pc-calc:update' file.id %}">Edit</a> | <a href="{% url 'pc-calc:delete' file.id %}">Delete</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

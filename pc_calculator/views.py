@@ -2,9 +2,11 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.views import generic
 from django.urls import reverse_lazy
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
+from django.db.models import Q
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -17,6 +19,7 @@ from pc_calculator.models import *
 from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
+from pc_link_rest.settings import MEDIA_ROOT
 
 import datetime
 import logging
@@ -82,7 +85,22 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
     model = ProgramOutcomeFile
     success_url = reverse_lazy('pc-calc:manage')
     template_name = 'pc_calculator/confirm_delete.html'
-    permission_classes = [IsAuthenticated]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        self.object = self.get_object()
+        context['por_objects'] = ProgramOutcomeResult.objects.filter(semester=self.object.semester, course=self.object.course)
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        po_results = ProgramOutcomeResult.objects.filter(semester=self.object.semester, course=self.object.course)
+        os.remove(os.path.join(MEDIA_ROOT, str(self.object.pc_file)))
+        po_results.delete()
+
+        return super().delete(request, *args, **kwargs)
+        # return redirect(self.get_success_url())
 
 def help(request):
     return render(request, 'pc_calculator/help.html')
@@ -106,7 +124,7 @@ def upload_program_outcome_file(request):
         if upload_result[0]:
             messages.success(request, 'Program Outcome file is successfuly uploaded.')
             send_mail(
-                f'[PÇ-Link Program Outcome Upload]: {course_code}',
+                f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
 f'''
 The following file has been SUBMITTED.
 ======================================================================
@@ -143,11 +161,18 @@ def export(request):
         for po in ProgramOutcome.objects.all():
             por = ProgramOutcomeResult.objects.filter(
                 student=student,
-                program_outcome=po).aggregate(Avg("satisfaction"))
-            if por["satisfaction__avg"] is not None:
-                poas.append(round(por["satisfaction__avg"]))
-            else:
+                program_outcome=po
+            )
+            total_number_of_courses = len(po.course_set.all())
+
+            if len(por) == 0:
                 poas.append('NA')
+            else:
+                satisfied_pors = por.filter(satisfaction=1)
+                if len(satisfied_pors) >= round(total_number_of_courses / 2):
+                    poas.append(1)
+                else:
+                    poas.append(0)
 
         records.append([student.no, student.name] + poas)
     writer.writerows(records)

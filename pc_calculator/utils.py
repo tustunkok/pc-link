@@ -6,7 +6,7 @@ from pc_calculator.models import *
 from django.shortcuts import get_object_or_404, redirect
 from django.core.files import File
 from django.contrib import messages
-from pc_link_rest.settings import BASE_DIR
+from pc_link_rest.settings import BASE_DIR, MEDIA_ROOT
 from django.http import HttpResponse
 from django.db.models import Avg
 from charset_normalizer import CharsetNormalizerMatches as CnM
@@ -46,6 +46,14 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
         if first_row:
             first_row = False
             program_outcomes = row[2:]
+
+            if not all(x.code in program_outcomes for x in course.program_outcomes.all()):
+                logger.info(f'[User: {request.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
+                messages.error(request, f'The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
+                os.remove(os.path.join(MEDIA_ROOT, str(program_outcome_file.pc_file)))
+                program_outcome_file.delete()
+                return (success, num_of_students)
+
             continue
 
         student = Student.objects.filter(no=row[0]).first()
@@ -68,20 +76,24 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
                     program_outcome=program_outcome,
                     semester=semester).first()
 
-                sat_input_value = 1 if row[po_idx + 2] == "1" or row[po_idx + 2] == "M" else 0
+                if row[po_idx + 2].upper() != 'U':
+                    sat_input_value = 1 if row[po_idx + 2] == "1" or row[po_idx + 2] == "M" else 0
 
-                if program_outcome_result:
-                    logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
-                    program_outcome_result.satisfaction = sat_input_value
-                    program_outcome_result.save()
+                    if program_outcome_result:
+                        logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
+                        program_outcome_result.satisfaction = sat_input_value
+                        program_outcome_result.save()
+                    else:
+                        program_outcome_result = ProgramOutcomeResult.objects.create(
+                            student=student,
+                            course=course,
+                            program_outcome=program_outcome,
+                            semester=semester,
+                            satisfaction=sat_input_value)
+                        logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
                 else:
-                    program_outcome_result = ProgramOutcomeResult.objects.create(
-                        student=student,
-                        course=course,
-                        program_outcome=program_outcome,
-                        semester=semester,
-                        satisfaction=sat_input_value)
-                    logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
+                    logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record does not created for student: {student}, course: {course}, semester: {semester}.')
+                    break
             else:
                 success = True
                 logger.info(f'[User: {request.user}] - ProgramOutcomeResult record for {program_outcome_result} is created or updated successfully.')
