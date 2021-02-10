@@ -198,5 +198,4 @@ def course_report(request):
     semester = get_object_or_404(Semester, pk=semester_id)
     uploaded_courses_set = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
 
-    logger.debug(f'The list of not uploaded courses is {not_uploaded_courses} for semester {semester}.')
     return render(request, 'pc_calculator/not_uploaded_courses.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})
