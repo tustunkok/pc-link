@@ -133,7 +133,7 @@ The following file has been SUBMITTED.
 ======================================================================
 Uploaded By: {request.user}
 File Name: {csvFile}
-Number of Recorded Students: {upload_result[1]}
+Number of Processed Students: {upload_result[1]}
 Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ======================================================================
 ''',

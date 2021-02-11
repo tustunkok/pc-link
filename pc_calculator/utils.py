@@ -11,11 +11,8 @@ from django.core.files import File
 from django.contrib import messages
 from django.conf import settings
 from django.http import HttpResponse
-from django.db.models import Avg
-from charset_normalizer import CharsetNormalizerMatches as CnM
-from charset_normalizer import detect
 
-def validate_uploaded_file(logger, request, delimiter, file_contents):
+def validate_uploaded_file(logger, request, delimiter, file_contents, program_outcome_file):
     failed = False
     logger.debug(f"[User: {request.user}] - Uploaded file contents are started to be validated.")
 
@@ -26,10 +23,17 @@ def validate_uploaded_file(logger, request, delimiter, file_contents):
     
     line_analysis_U = test_df.iloc[:, 2:].apply(lambda x: all(x.values == 'U') if 'U' in x.values else True, axis=1)
     line_analysis = test_df.iloc[:, 2:].isin(['U', 'M', '1', '0', 1, 0]).all(axis=1)
-    print()
+
+    if not test_df.columns[:2].isin(['student_id', 'name']).all():
+        messages.error(request, 'The headers of the file should be student_id, name, and PÇ codes.')
+        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
+        program_outcome_file.delete()
+        failed = True
 
     if not line_analysis_U.all():
         messages.error(request, f'Line(s) {", ".join((np.nonzero(line_analysis_U.values == False)[0] + 2).astype(str).tolist())} of the uploaded file is wrong.')
+        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
+        program_outcome_file.delete()
         failed = True
     
     if not line_analysis.all():
@@ -57,12 +61,8 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
         logger.error(f'[User: {request.user}] - File type found to be {file_type} for the uploaded file {csvFile}, it should be CSV.')
         return (success, num_of_students)
 
-    if not updated:
-        program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=user, semester=semester, course=course)
-        logger.debug(f'[User: {request.user}] - New ProgramOutcomeFile record created with details {program_outcome_file}.')
-    else:
-        program_outcome_file = ProgramOutcomeFile.objects.get(user=user, semester=semester, course=course)
-        logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeFile record is updated with details {program_outcome_file}.')
+    program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=user, semester=semester, course=course)
+    logger.debug(f'[User: {request.user}] - New ProgramOutcomeFile record created with details {program_outcome_file}.')
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
@@ -80,30 +80,24 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
     dialect = csv.Sniffer().sniff(result[:1024] or result, delimiters=[',', ';'])
     logger.debug(f"[User: {request.user}] - The delimiter of uploaded file {program_outcome_file.pc_file} is determined as '{dialect.delimiter}'.")
 
-    if validate_uploaded_file(logger, request, dialect.delimiter, result): # if failed
+    if validate_uploaded_file(logger, request, dialect.delimiter, result, program_outcome_file): # if failed
         return (success, num_of_students)
+    
+    result_df = pd.read_csv(io.StringIO(result), sep=dialect.delimiter)
+    file_pos = result_df.columns[2:]
 
-    result = result.split('\n')
+    if not all(x.code in file_pos for x in course.program_outcomes.all()):
+        logger.error(f'[User: {request.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
+        messages.error(request, f'The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
+        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
+        program_outcome_file.delete()
+        return (success, num_of_students)
+    
+    for idx, row in result_df.iterrows():
+        student = Student.objects.filter(no=row['student_id']).first()
 
-    first_row = True
-    for row in csv.reader(result, dialect):
-        if first_row:
-            first_row = False
-            program_outcomes = row[2:]
-
-            if not all(x.code in program_outcomes for x in course.program_outcomes.all()):
-                logger.error(f'[User: {request.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
-                messages.error(request, f'The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
-                os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
-                program_outcome_file.delete()
-                return (success, num_of_students)
-
-            continue
-
-        student = Student.objects.filter(no=row[0]).first()
-        
         if student is not None:
-            for po_idx, po in enumerate(program_outcomes):
+            for po_idx, po in enumerate(file_pos):
                 try:
                     program_outcome = ProgramOutcome.objects.get(
                         code=po.strip()
@@ -113,38 +107,38 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
                     logger.error(f"[User: {request.user}] - No program outcome found named as {po}.")
                     success = False
                     return (success, num_of_students)
-
+                
                 program_outcome_result = ProgramOutcomeResult.objects.filter(
                     student=student,
                     course=course,
                     program_outcome=program_outcome,
-                    semester=semester).first()
+                    semester=semester
+                ).first()
 
-                if row[po_idx + 2].upper() != 'U':
-                    sat_input_value = 1 if row[po_idx + 2] == "1" or row[po_idx + 2] == "M" else 0
+                sat_input_value = 1 if str(row.iloc[po_idx + 2]) == "1" or str(row.iloc[po_idx + 2]) == "M" else 0
 
-                    if program_outcome_result:
-                        logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
-                        program_outcome_result.satisfaction = sat_input_value
-                        program_outcome_result.save()
-                    else:
-                        program_outcome_result = ProgramOutcomeResult.objects.create(
-                            student=student,
-                            course=course,
-                            program_outcome=program_outcome,
-                            semester=semester,
-                            satisfaction=sat_input_value)
-                        logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
+                if program_outcome_result:
+                    logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
+                    program_outcome_result.satisfaction = sat_input_value
+                    program_outcome_result.save()
                 else:
-                    logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record does not created for student: {student}, course: {course}, semester: {semester}.')
-                    break
+                    program_outcome_result = ProgramOutcomeResult.objects.create(
+                        student=student,
+                        course=course,
+                        program_outcome=program_outcome,
+                        semester=semester,
+                        satisfaction=sat_input_value
+                    )
+                    logger.debug(f'[User: {request.user}] - New ProgramOutcomeResult record created for student: {student}, course: {course}, program outcome: {program_outcome}, semester: {semester}, and satisfaction: {sat_input_value}.')
             else:
                 success = True
                 logger.info(f'[User: {request.user}] - ProgramOutcomeResult record for {program_outcome_result} is created or updated successfully.')
                 num_of_students += 1
         else:
             logger.debug(f'[User: {request.user}] - No student found with an id {row[0]}.')
+
     return (success, num_of_students)
+    
 
 def populate_students(request):
     with open("migration_files/cmpe-students.csv", "r") as csv_file:
