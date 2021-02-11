@@ -18,7 +18,7 @@ from pc_calculator.models import *
 from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
-from pc_link_rest.settings import MEDIA_ROOT
+from django.conf import settings
 
 import pandas as pd
 import datetime
@@ -99,8 +99,8 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
         self.object = self.get_object()
 
         po_results = ProgramOutcomeResult.objects.filter(semester=self.object.semester, course=self.object.course)
-        if os.path.exists(os.path.join(MEDIA_ROOT, str(self.object.pc_file))):
-            os.remove(os.path.join(MEDIA_ROOT, str(self.object.pc_file)))
+        if os.path.exists(os.path.join(settings.MEDIA_ROOT, str(self.object.pc_file))):
+            os.remove(os.path.join(settings.MEDIA_ROOT, str(self.object.pc_file)))
         po_results.delete()
 
         return super().delete(request, *args, **kwargs)

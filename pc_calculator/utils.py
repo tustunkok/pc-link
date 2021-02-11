@@ -9,10 +9,11 @@ from pc_calculator.models import *
 from django.shortcuts import get_object_or_404, redirect
 from django.core.files import File
 from django.contrib import messages
-from pc_link_rest.settings import BASE_DIR, MEDIA_ROOT
+from django.conf import settings
 from django.http import HttpResponse
 from django.db.models import Avg
 from charset_normalizer import CharsetNormalizerMatches as CnM
+from charset_normalizer import detect
 
 def validate_uploaded_file(logger, request, delimiter, file_contents):
     failed = False
@@ -37,6 +38,13 @@ def validate_uploaded_file(logger, request, delimiter, file_contents):
     
     return failed
 
+def force_decode(string, codecs=['utf8', 'cp1252', 'cp1254']):
+    for i in codecs:
+        try:
+            return (i, string.decode(i))
+        except UnicodeDecodeError:
+            pass
+
 def handle_upload(request, course_code, semester_pk, csvFile, user, logger, updated=False):
     success = False
     num_of_students = 0
@@ -58,10 +66,10 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
-        det_result = CnM.from_bytes(contents_byte_str, cp_isolation=['cp1254', 'utf_8', 'cp1252']).best().first()
+        enc, det_result = force_decode(contents_byte_str)
 
-        if det_result.could_be_from_charset:
-            logger.debug(f'[User: {request.user}] - The encoding of uploaded file {program_outcome_file.pc_file} is determined as {det_result.could_be_from_charset[0]}.')
+        if det_result is not None:
+            logger.debug(f'[User: {request.user}] - The encoding of uploaded file {program_outcome_file.pc_file} is determined as {enc}.')
         else:
             messages.error(request, f'File encoding cannot be determined. It should be one of {["cp1254", "utf_8", "cp1252"]}')
             logger.error(f'[User: {request.user}] - The encoding of uploaded file cannot be determined.')
@@ -86,7 +94,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
             if not all(x.code in program_outcomes for x in course.program_outcomes.all()):
                 logger.error(f'[User: {request.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
                 messages.error(request, f'The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
-                os.remove(os.path.join(MEDIA_ROOT, str(program_outcome_file.pc_file)))
+                os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
                 program_outcome_file.delete()
                 return (success, num_of_students)
 
