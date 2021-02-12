@@ -84,9 +84,10 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
         return (success, num_of_students)
     
     result_df = pd.read_csv(io.StringIO(result), sep=dialect.delimiter)
-    file_pos = result_df.columns[2:]
+    file_pos = set(result_df.columns[2:])
+    uploaded_course_pos = set([x.code for x in course.program_outcomes.all()])
 
-    if not all(x.code in file_pos for x in course.program_outcomes.all()):
+    if not file_pos == uploaded_course_pos:
         logger.error(f'[User: {request.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
         messages.error(request, f'The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
         os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
