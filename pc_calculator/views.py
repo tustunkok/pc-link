@@ -65,16 +65,18 @@ class ProgramOutcomeFileUpdateView(LoginRequiredMixin, generic.UpdateView):
     fields = ['semester', 'course', 'pc_file']
     template_name = 'pc_calculator/update.html'
     success_url = reverse_lazy('pc-calc:manage')
-    permission_classes = [IsAuthenticated]
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-
         semester = form.cleaned_data['semester']
         course = form.cleaned_data['course']
         pc_file = form.cleaned_data['pc_file']
+        old_name = self.object.pc_file.name
+        
+        response = super().form_valid(form)
 
-        upload_result = handle_upload(self.request, course.code, semester.id, pc_file, self.request.user, logger, updated=True)
+        os.remove(os.path.join(os.path.dirname(self.object.pc_file.path), old_name))
+
+        upload_result = handle_upload(self.request, course.code, semester.id, pc_file, self.object)
 
         if upload_result[0]:
             messages.success(self.request, 'Program Outcome file is successfuly updated.')
@@ -122,25 +124,25 @@ def upload_program_outcome_file(request):
         semester_pk = form.cleaned_data['semester']
         csvFile = form.cleaned_data['outcome_file']
 
-        upload_result = handle_upload(request, course_code, semester_pk, csvFile, request.user, logger)
+        upload_result = handle_upload(request, course_code, semester_pk, csvFile)
 
         if upload_result[0]:
             messages.success(request, 'Program Outcome file is successfuly uploaded.')
-            send_mail(
-                f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
-f'''
-The following file has been SUBMITTED.
-======================================================================
-Uploaded By: {request.user}
-File Name: {csvFile}
-Number of Processed Students: {upload_result[1]}
-Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
-======================================================================
-''',
-                'tolgaustunkok@hotmail.com',
-                [request.user.email],
-                fail_silently=False
-            )
+#             send_mail(
+#                 f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
+# f'''
+# The following file has been SUBMITTED.
+# ======================================================================
+# Uploaded By: {request.user}
+# File Name: {csvFile}
+# Number of Processed Students: {upload_result[1]}
+# Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
+# ======================================================================
+# ''',
+#                 'tolgaustunkok@hotmail.com',
+#                 [request.user.email],
+#                 fail_silently=False
+#             )
             logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
         else:
             messages.warning(request, 'No student from the department exists in the uploaded file.')

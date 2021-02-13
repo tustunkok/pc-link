@@ -1,6 +1,7 @@
 import os
 import io
 import csv
+import logging
 import datetime
 import pandas as pd
 import numpy as np
@@ -12,7 +13,9 @@ from django.contrib import messages
 from django.conf import settings
 from django.http import HttpResponse
 
-def validate_uploaded_file(logger, request, delimiter, file_contents, program_outcome_file):
+logger = logging.getLogger('pc_link_custom_logger')
+
+def validate_uploaded_file(request, delimiter, file_contents, program_outcome_file):
     failed = False
     logger.debug(f"[User: {request.user}] - Uploaded file contents are started to be validated.")
 
@@ -49,7 +52,7 @@ def force_decode(string, codecs=['utf8', 'cp1252', 'cp1254']):
         except UnicodeDecodeError:
             pass
 
-def handle_upload(request, course_code, semester_pk, csvFile, user, logger, updated=False):
+def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_file=None):
     success = False
     num_of_students = 0
     course = get_object_or_404(Course, code=course_code)
@@ -61,8 +64,11 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
         logger.error(f'[User: {request.user}] - File type found to be {file_type} for the uploaded file {csvFile}, it should be CSV.')
         return (success, num_of_students)
 
-    program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=user, semester=semester, course=course)
-    logger.debug(f'[User: {request.user}] - New ProgramOutcomeFile record created with details {program_outcome_file}.')
+    if program_outcome_file is None :
+        program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=request.user, semester=semester, course=course)
+        logger.debug(f'[User: {request.user}] - New ProgramOutcomeFile record created with details {program_outcome_file}.')
+    else:
+        logger.debug(f'[User: {request.user}] - Using existing ProgramOutcomeFile record with details {program_outcome_file}.')
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
@@ -80,7 +86,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
     dialect = csv.Sniffer().sniff(result[:1024] or result, delimiters=[',', ';'])
     logger.debug(f"[User: {request.user}] - The delimiter of uploaded file {program_outcome_file.pc_file} is determined as '{dialect.delimiter}'.")
 
-    if validate_uploaded_file(logger, request, dialect.delimiter, result, program_outcome_file): # if failed
+    if validate_uploaded_file(request, dialect.delimiter, result, program_outcome_file): # if failed
         return (success, num_of_students)
     
     result_df = pd.read_csv(io.StringIO(result), sep=dialect.delimiter)
@@ -95,6 +101,10 @@ def handle_upload(request, course_code, semester_pk, csvFile, user, logger, upda
         return (success, num_of_students)
     
     for idx, row in result_df.iterrows():
+        if row.iloc[2:].str.contains('U').any():
+            num_of_students += 1
+            continue
+
         student = Student.objects.filter(no=row['student_id']).first()
 
         if student is not None:
