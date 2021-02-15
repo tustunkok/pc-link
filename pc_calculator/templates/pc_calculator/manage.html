@@ -43,10 +43,10 @@
 </div>
 <div class="row">
     <div class="col">
-        <form class="form-inline" action="{% url 'pc-calc:course_report' %}" method="POST">
+        <form class="form-inline" action="{% url 'pc-calc:course-report' %}" method="POST">
             {% csrf_token %}
             <div class="form-group">
-                <label>Show not uploaded courses for the semester:&nbsp;</label>
+                <label>Show uploaded status of courses for the semester:&nbsp;</label>
                 <select class="form-control" name="semester">
                     {% for sem in semesters %}
                         <option value="{{ sem.id }}">{{ sem }}</option>

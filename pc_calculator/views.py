@@ -128,21 +128,21 @@ def upload_program_outcome_file(request):
 
         if upload_result[0]:
             messages.success(request, 'Program Outcome file is successfuly uploaded.')
-#             send_mail(
-#                 f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
-# f'''
-# The following file has been SUBMITTED.
-# ======================================================================
-# Uploaded By: {request.user}
-# File Name: {csvFile}
-# Number of Processed Students: {upload_result[1]}
-# Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
-# ======================================================================
-# ''',
-#                 'tolgaustunkok@hotmail.com',
-#                 [request.user.email],
-#                 fail_silently=False
-#             )
+            send_mail(
+                f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
+f'''
+The following file has been SUBMITTED.
+======================================================================
+Uploaded By: {request.user}
+File Name: {csvFile}
+Number of Processed Students: {upload_result[1]}
+Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
+======================================================================
+''',
+                'tolgaustunkok@hotmail.com',
+                [request.user.email],
+                fail_silently=False
+            )
             logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
         else:
             messages.warning(request, 'No student from the department exists in the uploaded file.')
@@ -200,4 +200,4 @@ def course_report(request):
     semester = get_object_or_404(Semester, pk=semester_id)
     uploaded_courses_set = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
 
-    return render(request, 'pc_calculator/not_uploaded_courses.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})
+    return render(request, 'pc_calculator/upload_status.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})
