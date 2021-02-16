@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.mail import send_mail
+from django.core import mail
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -14,8 +14,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from django_filters.views import FilterView
+
 from pc_calculator.models import *
 from pc_calculator.serializers import *
+from pc_calculator.filters import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 from django.conf import settings
@@ -107,12 +110,50 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
 
         return super().delete(request, *args, **kwargs)
 
+class ReportFilterView(FilterView):
+    model = ProgramOutcomeResult
+    template_name = 'pc_calculator/report.html'
+    filterset_class = ProgramOutcomeResultFilter
+    paginate_by = 30
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        resultant_queryset = context['page_obj'].object_list
+
+        students = Student.objects.filter(id__in=set(x[0] for x in resultant_queryset.values_list('student')))
+        pos = ProgramOutcome.objects.filter(id__in=set(x[0] for x in resultant_queryset.values_list('program_outcome')))
+
+        context['pos'] = pos
+        context['students'] = list()
+
+        for student in students:
+            poas = list()
+            for po in pos:
+                por = ProgramOutcomeResult.objects.filter(
+                    student=student,
+                    program_outcome=po
+                )
+                total_number_of_courses = len(po.course_set.all())
+
+                if len(por) == 0:
+                    poas.append('NA')
+                else:
+                    satisfied_pors = por.filter(satisfaction=1)
+                    if len(satisfied_pors) >= round(total_number_of_courses / 2):
+                        poas.append(1)
+                    else:
+                        poas.append(0)
+
+            context['students'].append({
+                'name': student.name,
+                'poas': poas
+            })
+
+        return context
+
+
 def help(request):
     return render(request, 'pc_calculator/help.html')
-
-@login_required
-def report_view(request):
-    return render(request, 'pc_calculator/report.html')
 
 @login_required
 def upload_program_outcome_file(request):
@@ -128,7 +169,7 @@ def upload_program_outcome_file(request):
 
         if upload_result[0]:
             messages.success(request, 'Program Outcome file is successfuly uploaded.')
-            send_mail(
+            mail.send_mail(
                 f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
 f'''
 The following file has been SUBMITTED.

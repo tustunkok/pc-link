@@ -1,6 +1,7 @@
 asgiref==3.3.1
 Django==3.1.6
 django-crispy-forms==1.11.0
+django-filter==2.4.0
 djangorestframework==3.12.2
 et-xmlfile==1.0.1
 fontawesome-free==5.15.2
