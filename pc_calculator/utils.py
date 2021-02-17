@@ -45,12 +45,14 @@ def validate_uploaded_file(request, delimiter, file_contents, program_outcome_fi
     
     return failed
 
-def force_decode(string, codecs=['utf8', 'cp1252', 'cp1254']):
+
+def force_decode(string, codecs=['utf8', 'cp1254', 'cp1252']):
     for i in codecs:
         try:
             return (i, string.decode(i))
         except UnicodeDecodeError:
             pass
+
 
 def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_file=None):
     success = False

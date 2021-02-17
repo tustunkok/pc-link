@@ -19,9 +19,9 @@ urlpatterns = [
     path('manage/<int:pk>/update/', views.ProgramOutcomeFileUpdateView.as_view(), name='update'),
     path('manage/<int:pk>/delete/', views.ProgramOutcomeFileDeleteView.as_view(), name='delete'),
 
-    path('upload/students/', utils.populate_students),
-    path('upload/program-outcomes/', utils.populate_program_outcomes),
-    path('upload/courses/', utils.populate_courses),
+    # path('upload/students/', utils.populate_students),
+    # path('upload/program-outcomes/', utils.populate_program_outcomes),
+    # path('upload/courses/', utils.populate_courses),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

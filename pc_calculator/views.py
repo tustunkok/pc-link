@@ -36,10 +36,12 @@ class ProgramOutcomeResultList(generics.ListAPIView):
     serializer_class = ProgramOutcomeResultSerializer
     permission_classes = [IsAuthenticated]
 
+
 class StudentList(generics.ListAPIView):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
     permission_classes = [IsAuthenticated]
+
 
 class ProgramOutcomeList(generics.ListAPIView):
     queryset = ProgramOutcome.objects.all()
@@ -62,6 +64,7 @@ class ProgramOutcomeFileListView(LoginRequiredMixin, generic.ListView):
         context = super().get_context_data(**kwargs)
         context['semesters'] = Semester.objects.all()
         return context
+
 
 class ProgramOutcomeFileUpdateView(LoginRequiredMixin, generic.UpdateView):
     model = ProgramOutcomeFile
@@ -110,6 +113,7 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
 
         return super().delete(request, *args, **kwargs)
 
+
 class ReportFilterView(FilterView):
     model = ProgramOutcomeResult
     template_name = 'pc_calculator/report.html'
@@ -155,6 +159,7 @@ class ReportFilterView(FilterView):
 def help(request):
     return render(request, 'pc_calculator/help.html')
 
+
 @login_required
 def upload_program_outcome_file(request):
     form = ProgramOutcomeForm(request.POST or None, request.FILES or None)
@@ -189,6 +194,7 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
             messages.warning(request, 'No student from the department exists in the uploaded file.')
     
     return render(request, 'pc_calculator/upload.html', { 'form': form })
+
 
 @login_required
 def export(request):
@@ -233,6 +239,7 @@ def export(request):
         response["Content-Disposition"] = 'attachment; filename="report.csv"'
 
     return response
+
 
 @login_required
 def course_report(request):
