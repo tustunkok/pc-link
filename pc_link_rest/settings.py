@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'crispy_forms',
+    'maintenance_mode',
     'fontawesome-free',
     'pc_calculator.apps.PcCalculatorConfig',
     'accounts.apps.AccountsConfig',
@@ -57,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'maintenance_mode.middleware.MaintenanceModeMiddleware',
 ]
 
 ROOT_URLCONF = 'pc_link_rest.urls'
@@ -64,7 +66,7 @@ ROOT_URLCONF = 'pc_link_rest.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "templates")],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,6 +74,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'maintenance_mode.context_processors.maintenance_mode',
             ],
         },
     },
@@ -126,6 +129,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
+
+MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 
 STATIC_URL = 'static/'
 MEDIA_URL = 'media/'

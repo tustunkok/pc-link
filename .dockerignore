@@ -2,6 +2,7 @@
 *.xcf
 .git/
 .gitignore
+maintenance_mode_state.txt
 secret_key.txt
 Dockerfile
 000*.py
