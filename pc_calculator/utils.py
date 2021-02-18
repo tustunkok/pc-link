@@ -103,9 +103,12 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
         return (success, num_of_students)
     
     for idx, row in result_df.iterrows():
-        if row.iloc[2:].str.contains('U').any():
-            num_of_students += 1
-            continue
+        try:
+            if row.iloc[2:].str.contains('U').any():
+                num_of_students += 1
+                continue
+        except:
+            pass
 
         student = Student.objects.filter(no=row['student_id'], graduated_on__isnull=True).first()
 
