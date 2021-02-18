@@ -202,7 +202,7 @@ def export(request):
     file_type = request.POST['exp_type']
 
     records = list()
-    for student in Student.objects.all():
+    for student in Student.objects.filter(graduated_on__isnull=True):
         poas = list()
         for po in ProgramOutcome.objects.all():
             por = ProgramOutcomeResult.objects.filter(

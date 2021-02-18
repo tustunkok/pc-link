@@ -107,7 +107,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
             num_of_students += 1
             continue
 
-        student = Student.objects.filter(no=row['student_id']).first()
+        student = Student.objects.filter(no=row['student_id'], graduated_on__isnull=True).first()
 
         if student is not None:
             for po_idx, po in enumerate(file_pos):
