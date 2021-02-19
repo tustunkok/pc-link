@@ -20,7 +20,7 @@
                         <td>{{ file.filename }}</td>
                         <td>{{ file.course }}</td>
                         <td>{{ file.semester }}</td>
-                        <td><a href="{% url 'pc-calc:update' file.id %}">Edit</a> | <a href="{% url 'pc-calc:delete' file.id %}">Delete</a></td>
+                        <td><a href="{% url 'pc-calc:update' file.id %}">Edit</a> | <a href="{% url 'pc-calc:delete-file-only' file.id %}">Delete Only File</a> | <a href="{% url 'pc-calc:delete' file.id %}">Delete</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

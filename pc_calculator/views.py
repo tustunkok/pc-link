@@ -114,6 +114,20 @@ class ProgramOutcomeFileDeleteView(LoginRequiredMixin, generic.DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
+class ProgramOutcomeFileDeleteOnlyFileView(LoginRequiredMixin, generic.DeleteView):
+    model = ProgramOutcomeFile
+    success_url = reverse_lazy('pc-calc:manage')
+    template_name = 'pc_calculator/confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if os.path.exists(os.path.join(settings.MEDIA_ROOT, str(self.object.pc_file))):
+            os.remove(os.path.join(settings.MEDIA_ROOT, str(self.object.pc_file)))
+
+        return super().delete(request, *args, **kwargs)
+
+
 class ReportFilterView(FilterView):
     model = ProgramOutcomeResult
     template_name = 'pc_calculator/report.html'

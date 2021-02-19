@@ -18,6 +18,7 @@ urlpatterns = [
     path('manage/', views.ProgramOutcomeFileListView.as_view(), name='manage'),
     path('manage/<int:pk>/update/', views.ProgramOutcomeFileUpdateView.as_view(), name='update'),
     path('manage/<int:pk>/delete/', views.ProgramOutcomeFileDeleteView.as_view(), name='delete'),
+    path('manage/<int:pk>/delete-file-only/', views.ProgramOutcomeFileDeleteOnlyFileView.as_view(), name='delete-file-only'),
 
     # path('upload/students/', utils.populate_students),
     # path('upload/program-outcomes/', utils.populate_program_outcomes),
