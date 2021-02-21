@@ -22,7 +22,7 @@
             </div>
         </form>
         {% if user.is_superuser %}
-            <p><a href="/maintenance-mode/on/">Set Maintenance Mode</a></p>
+            <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a></p>
         {% endif %}
     </div>
 </div>
