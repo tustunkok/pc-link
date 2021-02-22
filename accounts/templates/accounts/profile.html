@@ -8,6 +8,7 @@
         <img class="img-thumbnail" src="{{ user.profile.image.url }}" width="200px" height="200px">
         <h2>{{ user.username }}</h2>
         <p class="text-secondary">{{ user.email }}</p>
+        <p><a href="{% url 'reset-password' %}">Reset Password</a></p>
     </div>
     <div class="col-8">
         <form method="POST" enctype="multipart/form-data">
