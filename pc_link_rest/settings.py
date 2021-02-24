@@ -46,8 +46,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'maintenance_mode',
     'fontawesome-free',
-    'pc_calculator.apps.PcCalculatorConfig',
-    'accounts.apps.AccountsConfig',
+    'pc_calculator',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -138,7 +138,12 @@ STATIC_ROOT = '/static'
 MEDIA_ROOT = '/media'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'pc-calc:home'
-LOGIN_URL = 'accounts/login/'
+
+if os.getenv('SCRIPT_NAME') is not None:
+    LOGIN_URL = f'/{os.getenv("SCRIPT_NAME")}/accounts/login/'
+else:
+    LOGIN_URL = '/accounts/login/'
+
 AUTH_USER_MODEL = 'pc_calculator.User'
 
 EMAIL_HOST = 'in-v3.mailjet.com'

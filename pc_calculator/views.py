@@ -128,7 +128,7 @@ class ProgramOutcomeFileDeleteOnlyFileView(LoginRequiredMixin, generic.DeleteVie
         return super().delete(request, *args, **kwargs)
 
 
-class ReportFilterView(FilterView):
+class ReportFilterView(LoginRequiredMixin, FilterView):
     model = ProgramOutcomeResult
     template_name = 'pc_calculator/report.html'
     filterset_class = ProgramOutcomeResultFilter
