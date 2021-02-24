@@ -187,7 +187,7 @@ def upload_program_outcome_file(request):
         upload_result = handle_upload(request, course_code, semester_pk, csvFile)
 
         if upload_result[0]:
-            messages.success(request, 'Program Outcome file is successfuly uploaded.')
+            messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
             mail.send_mail(
                 f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
 f'''
