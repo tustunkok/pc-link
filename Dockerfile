@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libpcre3 \
     libpcre3-dev \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . /pc_link_rest/

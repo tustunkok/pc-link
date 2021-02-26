@@ -137,6 +137,8 @@ class ReportFilterView(LoginRequiredMixin, FilterView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         resultant_queryset = context['page_obj'].object_list
+        export_report_form = ExportReportForm()
+        context['export_form'] = export_report_form
 
         students = Student.objects.filter(id__in=set(x[0] for x in resultant_queryset.values_list('student')))
         pos = ProgramOutcome.objects.filter(id__in=set(x[0] for x in resultant_queryset.values_list('program_outcome')))
@@ -164,7 +166,7 @@ class ReportFilterView(LoginRequiredMixin, FilterView):
 
             context['students'].append({
                 'name': student.name,
-                'poas': poas
+                'poas': poas,
             })
 
         return context
@@ -213,7 +215,14 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 @login_required
 def export(request):
     logger.info(f'Export requested by {request.user}.')
-    file_type = request.POST['exp_type']
+    export_report_form = ExportReportForm(request.POST)
+
+    if request.method != 'POST' or not export_report_form.is_valid():
+        return redirect('pc-calc:home')
+    
+    file_type = export_report_form.cleaned_data['export_type']
+    semesters = export_report_form.cleaned_data['semesters']
+    logger.debug(f'Exporting for semesters: {semesters}')
 
     tuples = list()
     for po in ProgramOutcome.objects.all():
@@ -228,7 +237,8 @@ def export(request):
         for po in ProgramOutcome.objects.all():
             por = ProgramOutcomeResult.objects.filter(
                 student=student,
-                program_outcome=po
+                program_outcome=po,
+                semester__in=semesters
             )
 
             for pr in por:
@@ -239,6 +249,9 @@ def export(request):
             if len(por) == 0:
                 poas.append('NA')
                 report_df.loc[student.no, (po.code, 'AVG')] = 'NA'
+            elif total_number_of_courses == 1:
+                poas.append(por.first().satisfaction)
+                report_df.loc[student.no, (po.code, 'AVG')] = str(por.first().satisfaction)
             elif len(por) < (total_number_of_courses / 2):
                 poas.append('I')
                 report_df.loc[student.no, (po.code, 'AVG')] = 'I'
