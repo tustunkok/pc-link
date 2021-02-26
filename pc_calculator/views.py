@@ -253,8 +253,8 @@ def export(request):
                 poas.append(por.first().satisfaction)
                 report_df.loc[student.no, (po.code, 'AVG')] = str(por.first().satisfaction)
             elif len(por) < (total_number_of_courses / 2):
-                poas.append('I')
-                report_df.loc[student.no, (po.code, 'AVG')] = 'I'
+                poas.append('IN')
+                report_df.loc[student.no, (po.code, 'AVG')] = 'IN'
             else:
                 satisfied_pors = por.filter(satisfaction=1)
                 if len(satisfied_pors) >= round(total_number_of_courses / 2):
