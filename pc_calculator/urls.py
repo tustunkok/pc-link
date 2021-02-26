@@ -20,7 +20,7 @@ urlpatterns = [
     path('manage/<int:pk>/delete/', views.ProgramOutcomeFileDeleteView.as_view(), name='delete'),
     path('manage/<int:pk>/delete-file-only/', views.ProgramOutcomeFileDeleteOnlyFileView.as_view(), name='delete-file-only'),
 
-    # path('upload/students/', utils.populate_students),
+    path('upload/students/', views.populate_students, name='update-students'),
     # path('upload/program-outcomes/', utils.populate_program_outcomes),
     # path('upload/courses/', utils.populate_courses),
 ]

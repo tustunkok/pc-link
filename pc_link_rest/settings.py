@@ -27,7 +27,7 @@ with open(BASE_DIR / 'persist' / 'secret_key.txt', 'r') as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['172.16.91.99', '127.0.0.1', 'toliga.com']
 
@@ -135,7 +135,7 @@ MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 STATIC_URL = 'static/'
 MEDIA_URL = 'media/'
 STATIC_ROOT = '/static'
-MEDIA_ROOT = '/media'
+MEDIA_ROOT =  '/media'
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'pc-calc:home'
 

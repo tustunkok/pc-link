@@ -23,6 +23,17 @@
             </div>
         </form>
         {% if user.is_superuser %}
+            <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-students' %}">
+                {% csrf_token %}
+                <fieldset class="form-group">
+                    <legend class="border-bottom  mb-4">Update Student Information</legend>
+                    {{ stu_bulk_form|crispy }}
+                </fieldset>
+                <div class="form-group">
+                    <button class="btn btn-outline-info" type="submit">Update</button>
+                </div>
+            </form>
+            <h4 class="border-bottom  mb-4">Maintenance</h4>
             <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a></p>
         {% endif %}
     </div>

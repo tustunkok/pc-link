@@ -56,7 +56,7 @@ class ProgramOutcomeFileListView(LoginRequiredMixin, generic.ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        if self.request.user.username != 'tustunkok':
+        if not self.request.user.is_superuser:
             return ProgramOutcomeFile.objects.filter(user=self.request.user).order_by('-date_uploaded')
         return ProgramOutcomeFile.objects.order_by('-date_uploaded')
     
@@ -263,3 +263,46 @@ def course_report(request):
     uploaded_courses_set = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
 
     return render(request, 'pc_calculator/upload_status.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})
+
+
+@login_required
+def populate_students(request):
+    if request.method == 'POST':
+        stu_bulk_form = StudentBulkUpload(request.POST, request.FILES)
+
+        if stu_bulk_form.is_valid():
+            students_df = pd.read_csv(stu_bulk_form.cleaned_data['students_csv_file'])
+            students_df.fillna(value={'transfer_student': False, 'double_major_student': False}, inplace=True)
+
+            print(students_df.tail(10))
+
+            for idx, row in students_df.iterrows():
+                Student.objects.update_or_create(
+                    no=row['student_id'],
+                    defaults={
+                        'name': row['name'],
+                        'transfer_student': row['transfer_student'],
+                        'double_major_student': row['double_major_student'],
+                        'graduated_on': None if pd.isna(row['graduated_on']) else datetime.datetime.strptime(row['graduated_on'], "%d/%m/%Y")
+                    }
+                )
+
+            messages.success(request, 'Update successful.')
+        else:
+            messages.error(request, f'Update does not successful: {stu_bulk_form.non_field_errors()}')
+        
+        return redirect('profile')
+
+        # with open("migration_files/cmpe-students.csv", "r") as csv_file:
+        #     file_iterable = iter(csv_file)
+        #     next(file_iterable)
+
+        #     instances = [Student(
+        #         no=row[0],
+        #         name=row[1],
+        #         transfer_student=bool(int(row[2])),
+        #         double_major_student=bool(int(row[3])),
+        #         graduated_on=datetime.datetime.strptime(row[4], "%d/%m/%Y") if row[4] != '' else None
+        #     ) for row in csv.reader(file_iterable)]
+        # Student.objects.bulk_create(instances)
+        # return redirect('/admin/pc_calculator/student/')

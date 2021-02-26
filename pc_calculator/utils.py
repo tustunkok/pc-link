@@ -156,21 +156,6 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
     return (success, num_of_students)
     
 
-def populate_students(request):
-    with open("migration_files/cmpe-students.csv", "r") as csv_file:
-        file_iterable = iter(csv_file)
-        next(file_iterable)
-
-        instances = [Student(
-            no=row[0],
-            name=row[1],
-            transfer_student=bool(int(row[2])),
-            double_major_student=bool(int(row[3])),
-            graduated_on=datetime.datetime.strptime(row[4], "%d/%m/%Y") if row[4] != '' else None
-        ) for row in csv.reader(file_iterable)]
-    Student.objects.bulk_create(instances)
-    return redirect('/admin/pc_calculator/student/')
-
 def populate_program_outcomes(request):
     with open("migration_files/program_outcomes.csv", "r") as csv_file:
         file_iterable = iter(csv_file)
