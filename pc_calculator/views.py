@@ -215,6 +215,13 @@ def export(request):
     logger.info(f'Export requested by {request.user}.')
     file_type = request.POST['exp_type']
 
+    tuples = list()
+    for po in ProgramOutcome.objects.all():
+        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
+    index = pd.MultiIndex.from_tuples(tuples)
+
+    report_df = pd.DataFrame(index=Student.objects.values_list('no', 'name'), columns=index)
+
     records = list()
     for student in Student.objects.filter(graduated_on__isnull=True):
         poas = list()
@@ -223,20 +230,30 @@ def export(request):
                 student=student,
                 program_outcome=po
             )
+
+            for pr in por:
+                report_df.loc[student.no, (po.code, pr.course.code)] = pr.satisfaction
+
             total_number_of_courses = len(po.course_set.all())
 
             if len(por) == 0:
                 poas.append('NA')
+                report_df.loc[student.no, (po.code, 'AVG')] = 'NA'
+            elif len(por) < (total_number_of_courses / 2):
+                poas.append('I')
+                report_df.loc[student.no, (po.code, 'AVG')] = 'I'
             else:
                 satisfied_pors = por.filter(satisfaction=1)
                 if len(satisfied_pors) >= round(total_number_of_courses / 2):
                     poas.append(1)
+                    report_df.loc[student.no, (po.code, 'AVG')] = '1'
                 else:
                     poas.append(0)
+                    report_df.loc[student.no, (po.code, 'AVG')] = '0'
 
         records.append([student.no, student.name] + poas)
     
-    report_df = pd.DataFrame(records, columns=["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
+    csv_report_df = pd.DataFrame(records, columns=["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
@@ -247,7 +264,7 @@ def export(request):
         response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
     elif file_type == 'csv':
         csv_buffer = io.StringIO()
-        report_df.to_csv(csv_buffer, index=False)
+        csv_report_df.to_csv(csv_buffer, index=False)
         csv_buffer.seek(0)
         response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
         response["Content-Disposition"] = 'attachment; filename="report.csv"'
