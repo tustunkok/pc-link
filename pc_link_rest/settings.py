@@ -133,10 +133,18 @@ USE_TZ = True
 MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
 
 STATIC_URL = 'static/'
+
 MEDIA_URL = 'media/'
+
 STATIC_ROOT = '/static'
-MEDIA_ROOT =  '/media'
+
+if DEBUG == True:
+    MEDIA_ROOT = BASE_DIR / 'media'
+else:
+    MEDIA_ROOT = '/media'
+
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
 LOGIN_REDIRECT_URL = 'pc-calc:home'
 
 if os.getenv('SCRIPT_NAME') is not None:

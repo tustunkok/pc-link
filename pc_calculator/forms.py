@@ -20,13 +20,7 @@ class ProgramOutcomeForm(forms.Form):
     outcome_file = forms.FileField(label="Upload the PÇ File:")
 
 
-class ProgramOutcomeFileForm(forms.ModelForm):
-    class Meta:
-        model = ProgramOutcomeFile
-        fields = ['semester', 'pc_file']
-
-
-class StudentBulkUpload(forms.Form):
+class StudentBulkUploadForm(forms.Form):
     students_csv_file = forms.FileField(label='Upload Updated Students CSV File:')
 
     def clean(self):

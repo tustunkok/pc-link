@@ -4,8 +4,10 @@ from django.views import generic
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core import mail
+from django.conf import settings
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -21,13 +23,14 @@ from pc_calculator.serializers import *
 from pc_calculator.filters import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
-from django.conf import settings
 
 import pandas as pd
 import datetime
 import logging
+import glob
 import csv
 import io
+import os
 
 logger = logging.getLogger('pc_link_custom_logger')
 
@@ -218,7 +221,7 @@ def export(request):
     export_report_form = ExportReportForm(request.POST)
 
     if request.method != 'POST' or not export_report_form.is_valid():
-        return redirect('pc-calc:home')
+        return redirect('pc-calc:report')
     
     file_type = export_report_form.cleaned_data['export_type']
     semesters = export_report_form.cleaned_data['semesters']
@@ -298,7 +301,7 @@ def course_report(request):
 @login_required
 def populate_students(request):
     if request.method == 'POST':
-        stu_bulk_form = StudentBulkUpload(request.POST, request.FILES)
+        stu_bulk_form = StudentBulkUploadForm(request.POST, request.FILES)
 
         if stu_bulk_form.is_valid():
             students_df = pd.read_csv(stu_bulk_form.cleaned_data['students_csv_file'])
@@ -323,16 +326,30 @@ def populate_students(request):
         
         return redirect('profile')
 
-        # with open("migration_files/cmpe-students.csv", "r") as csv_file:
-        #     file_iterable = iter(csv_file)
-        #     next(file_iterable)
 
-        #     instances = [Student(
-        #         no=row[0],
-        #         name=row[1],
-        #         transfer_student=bool(int(row[2])),
-        #         double_major_student=bool(int(row[3])),
-        #         graduated_on=datetime.datetime.strptime(row[4], "%d/%m/%Y") if row[4] != '' else None
-        #     ) for row in csv.reader(file_iterable)]
-        # Student.objects.bulk_create(instances)
-        # return redirect('/admin/pc_calculator/student/')
+@login_required
+@staff_member_required
+def recalculate_all_pos(request):
+    for csv_file in glob.glob(os.path.join(settings.MEDIA_ROOT, '**', '*.csv'), recursive=True):
+        csv_file_df = pd.read_csv(csv_file, sep=None, engine='python')
+        file_pos = set(csv_file_df.columns[2:])
+
+        for idx, row in csv_file_df.iterrows():
+            student = Student.objects.filter(no=row['student_id'], graduated_on__isnull=True).first()
+
+            if student is not None:
+                for po_idx, po in enumerate(file_pos):
+                    program_outcome = ProgramOutcome.objects.get(code=po.strip())
+
+                    ProgramOutcomeResult.objects.update_or_create(
+                        student=student,
+                        # course=course,
+                        program_outcome=program_outcome,
+                        # semester=semester,
+                        defaults={
+                            'satisfaction': 1 if str(row.iloc[po_idx + 2]) == "1" or str(row.iloc[po_idx + 2]) == "M" else 0
+                        }
+                    )
+
+    
+    return redirect('profile')

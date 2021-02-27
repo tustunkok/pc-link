@@ -9,17 +9,26 @@
         <h2>{{ user.username }}</h2>
         <p class="text-secondary">{{ user.email }}</p>
         <p><a href="{% url 'reset-password' %}">Reset Password</a></p>
+        {% if user.is_superuser %}
+            <h5><i class="fas fa-exclamation-triangle"></i>NOT READY<i class="fas fa-exclamation-triangle"></i></h5>
+            <div class="card border-warning text-center mx-auto" style="max-width: 18rem;">
+                <div class="card-body text-warning">
+                <h5 class="card-title">Danger Zone</h5>
+                <p class="card-text"><a class="btn btn-outline-warning" href="{% url 'pc-calc:recalculate-all-pos' %}">Recalculate All PO Results</a></p>
+                </div>
+            </div>
+        {% endif %}
     </div>
     <div class="col-8">
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <fieldset class="form-group">
-                <legend class="border-bottom  mb-4">Profile Info</legend>
+                <legend class="border-bottom mb-4">Profile Info</legend>
                 {{ u_form|crispy }}
                 {{ p_form|crispy }}
             </fieldset>
             <div class="form-group">
-                <button class="btn btn-outline-info" type="submit">Update</button>
+                <button class="btn btn-primary" type="submit">Update Profile</button>
             </div>
         </form>
         {% if user.is_superuser %}
@@ -30,7 +39,7 @@
                     {{ stu_bulk_form|crispy }}
                 </fieldset>
                 <div class="form-group">
-                    <button class="btn btn-outline-info" type="submit">Update</button>
+                    <button class="btn btn-primary" type="submit">Update Students</button>
                 </div>
             </form>
             <h4 class="border-bottom  mb-4">Maintenance</h4>

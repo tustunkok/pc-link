@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from accounts.forms import *
-from pc_calculator.forms import StudentBulkUpload
+from pc_calculator.forms import StudentBulkUploadForm
 from django.contrib.auth import views as auth_views
 
 def register(request):
@@ -31,7 +31,7 @@ def profile(request):
     else:
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)
-        stu_bulk_form = StudentBulkUpload()
+        stu_bulk_form = StudentBulkUploadForm()
     
     context = {
         'u_form': u_form,
