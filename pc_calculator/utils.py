@@ -132,9 +132,15 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
                 ).first()
 
                 sat_input_value = 1 if str(row.iloc[po_idx + 2]) == "1" or str(row.iloc[po_idx + 2]) == "M" else 0
+                
+                try:
+                    ProgramOutcomeResult.objects.exclude(semester=semester).get(course=course, student=student, program_outcome=program_outcome).delete()
+                    logger.debug(f'Existing records for semester {semester} are replaced with new ones for student {student}, course {course}, and program outcome {program_outcome}')
+                except:
+                    pass
 
                 if program_outcome_result:
-                    logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
+                    logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record {program_outcome_result} updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
                     program_outcome_result.satisfaction = sat_input_value
                     program_outcome_result.save()
                 else:
