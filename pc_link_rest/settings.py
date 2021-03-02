@@ -29,7 +29,7 @@ with open(BASE_DIR / 'persist' / 'secret_key.txt', 'r') as f:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['172.16.91.99', '127.0.0.1', 'toliga.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'pc-link.atilim.edu.tr']
 
 
 # Application definition
@@ -136,12 +136,9 @@ STATIC_URL = 'static/'
 
 MEDIA_URL = 'media/'
 
-STATIC_ROOT = '/static'
+STATIC_ROOT = BASE_DIR / 'static'
 
-if DEBUG == True:
-    MEDIA_ROOT = BASE_DIR / 'media'
-else:
-    MEDIA_ROOT = '/media'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
@@ -154,13 +151,13 @@ else:
 
 AUTH_USER_MODEL = 'pc_calculator.User'
 
-EMAIL_HOST = 'in-v3.mailjet.com'
+EMAIL_HOST = 'mail.atilim.edu.tr'
 EMAIL_PORT = 587
 with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:
     EMAIL_HOST_USER = f.readline().strip()
     EMAIL_HOST_PASSWORD = f.readline().strip()
 EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'tolgaustunkok@hotmail.com'
+DEFAULT_FROM_EMAIL = 'pc-link@atilim.edu.tr'
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'

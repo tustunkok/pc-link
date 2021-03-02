@@ -6,6 +6,7 @@ maintenance_mode_state.txt
 secret_key.txt
 Dockerfile
 000*.py
+run-pclink.sh
 persist/
 static/
 .vscode/

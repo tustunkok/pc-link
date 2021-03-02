@@ -204,7 +204,7 @@ Number of Processed Students: {upload_result[1]}
 Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ======================================================================
 ''',
-                'tolgaustunkok@hotmail.com',
+                'pc-link@atilim.edu.tr',
                 [request.user.email],
                 fail_silently=False
             )
