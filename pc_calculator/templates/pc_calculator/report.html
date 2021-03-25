@@ -4,50 +4,8 @@
 {% block content %}
 
 <div class="row">
+    <div class="col-2"></div>
     <div class="col-8">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Name</th>
-                    {% for po in pos %}
-                        <th scope="col">{{ po.code }}</th>
-                    {% endfor %}
-                </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                        <tr>
-                            <th scope="row">{{ forloop.counter }}</th>
-                            <td>{{ student.name }}</td>
-                            {% for poa in student.poas %}
-                                <td>{{ poa }}</td>
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="pagination">
-            <span class="step-links">
-                {% if page_obj.has_previous %}
-                    <a href="?{% param_replace page=1 %}">&laquo; first</a>
-                    <a href="?{% param_replace page=page_obj.previous_page_number %}">previous</a>
-                {% endif %}
-        
-                <span class="current">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-                </span>
-        
-                {% if page_obj.has_next %}
-                    <a href="?{% param_replace page=page_obj.next_page_number %}">next</a>
-                    <a href="?{% param_replace page=paginator.num_pages %}">last &raquo;</a>
-                {% endif %}
-            </span>
-        </div>
-
         <h5>Export Report</h5>
         <hr>
         <form action="{% url 'pc-calc:export' %}" method="POST">
@@ -56,18 +14,6 @@
             <button class="btn btn-secondary" type="submit">Download</button>
         </form>
     </div>
-    <div class="col-4 text-center">
-        <h5><br>Choose which records you want to see.<br></h5>
-        <form method="get">
-            {{ filter.form|crispy }}
-            <input type="submit" />
-        </form>
-        <br>
-        <div class="alert alert-warning" role="alert">
-            Preview of the report is deprecated and will be removed in later versions. <strong>To see the correct PÇ 
-            averages of students, please export the report from the Download button.</strong>
-        </div>
-    </div>
-</div>
+    <div class="col-2"></div>
 
 {% endblock %}

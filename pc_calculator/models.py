@@ -30,6 +30,7 @@ class User(AbstractUser):
 class Semester(models.Model):
     year_interval = models.CharField(max_length=9)
     period_name = models.CharField(max_length=6)
+    period_order_value = models.IntegerField(default=1)
     active = models.BooleanField(default=False)
 
     class Meta:
@@ -90,3 +91,6 @@ class ProgramOutcomeResult(models.Model):
         return self.student.name + " - " + self.course.code + " - [" + \
             self.program_outcome.code + "] - " + str(self.semester) + " - " + \
                 str(self.satisfaction)
+    
+    class Meta:
+        ordering = ['course']

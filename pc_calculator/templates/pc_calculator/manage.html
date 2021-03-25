@@ -11,6 +11,8 @@
                     <th scope="col">File Name</th>
                     <th scope="col">Course</th>
                     <th scope="col">Semester</th>
+                    <th scope="col">Uploaded By</th>
+                    <th scope="col">Upload Date</th>
                     <th scope="col">Operation</th>
                 </tr>
             </thead>
@@ -20,6 +22,8 @@
                         <td>{{ file.filename }}</td>
                         <td>{{ file.course }}</td>
                         <td>{{ file.semester }}</td>
+                        <td>{{ file.user.username }}</td>
+                        <td>{{ file.date_uploaded }}</td>
                         <td><a href="{% url 'pc-calc:update' file.id %}"><i class="far fa-edit"></i></a> | <a href="{% url 'pc-calc:delete-file-only' file.id %}"><i class="fas fa-folder-minus"></i></a> | <a href="{% url 'pc-calc:delete' file.id %}"><i class="far fa-trash-alt"></i></a></td>
                     </tr>
                 {% endfor %}

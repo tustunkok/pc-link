@@ -261,8 +261,13 @@ def export(request):
                 semester__in=semesters
             )
 
-            for pr in por:
-                report_df.loc[student.no, (po.code, pr.course.code)] = pr.satisfaction
+            from django.db.models import Count, Max
+
+            for crs in por.values('course').annotate(Count('id')).order_by():
+                if crs['id__count'] > 1:
+                    report_df.loc[student.no, (po.code, Course.objects.get(id=crs['course']).code)] = por.filter(course=crs['course']).order_by('-semester__period_order_value').first().satisfaction
+                else:
+                    report_df.loc[student.no, (po.code, Course.objects.get(id=crs['course']).code)] = por.filter(course=crs['course']).first().satisfaction
 
             total_number_of_courses = len(po.course_set.all())
 
@@ -272,7 +277,7 @@ def export(request):
             elif total_number_of_courses == 1:
                 poas.append(por.first().satisfaction)
                 report_df.loc[student.no, (po.code, 'AVG')] = str(por.first().satisfaction)
-            elif len(por) < (total_number_of_courses / 2):
+            elif len(por) <= (total_number_of_courses / 2):
                 poas.append('IN')
                 report_df.loc[student.no, (po.code, 'AVG')] = 'IN'
             else:
@@ -347,26 +352,36 @@ def populate_students(request):
 @login_required
 @staff_member_required
 def recalculate_all_pos(request):
-    for csv_file in glob.glob(os.path.join(settings.MEDIA_ROOT, '**', '*.csv'), recursive=True):
-        csv_file_df = pd.read_csv(csv_file, sep=None, engine='python')
+    logger.info('Deleting existing records...')
+    ProgramOutcomeResult.objects.all().delete()
+
+    logger.info('All POs are recalculating...')
+    all_po_files = ProgramOutcomeFile.objects.all()
+    for po_count, program_outcome_file in enumerate(all_po_files):
+        logger.debug(f'Read from file: {program_outcome_file.pc_file.name}. Remaining: {len(all_po_files) - (po_count + 1)}')
+
+        with program_outcome_file.pc_file.open(mode='rb') as csv_file:
+            contents_byte_str = csv_file.read()
+            enc, _ = force_decode(contents_byte_str)
+
+        csv_file_df = pd.read_csv(program_outcome_file.pc_file.path, sep=None, engine='python', encoding=enc)
         file_pos = set(csv_file_df.columns[2:])
 
         for idx, row in csv_file_df.iterrows():
-            student = Student.objects.filter(no=row['student_id'], graduated_on__isnull=True).first()
+            student = Student.objects.filter(no=row.iloc[0], graduated_on__isnull=True).first()
 
             if student is not None:
                 for po_idx, po in enumerate(file_pos):
                     program_outcome = ProgramOutcome.objects.get(code=po.strip())
 
-                    ProgramOutcomeResult.objects.update_or_create(
-                        student=student,
-                        # course=course,
-                        program_outcome=program_outcome,
-                        # semester=semester,
-                        defaults={
-                            'satisfaction': 1 if str(row.iloc[po_idx + 2]) == "1" or str(row.iloc[po_idx + 2]) == "M" else 0
-                        }
-                    )
-
+                    if not row.iloc[po_idx + 2:].astype(str).str.contains('U').any():
+                        ProgramOutcomeResult.objects.create(
+                            student=student,
+                            course=program_outcome_file.course,
+                            program_outcome=program_outcome,
+                            semester=program_outcome_file.semester,
+                            satisfaction= 1 if str(row.iloc[po_idx + 2]) == "1" or str(row.iloc[po_idx + 2]) == "M" else 0
+                        )
     
+    messages.success(request, 'All student POs successfuly recalculated.')
     return redirect('profile')
