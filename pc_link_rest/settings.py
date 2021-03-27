@@ -169,6 +169,7 @@ else:
 
 AUTH_USER_MODEL = 'pc_calculator.User'
 
+SERVER_EMAIL = 'pc-link@atilim.edu.tr'
 EMAIL_HOST = 'mail.atilim.edu.tr'
 EMAIL_PORT = 587
 with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:

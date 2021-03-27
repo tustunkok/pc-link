@@ -232,6 +232,17 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
     return render(request, 'pc_calculator/upload.html', { 'form': form })
 
 
+def calculate_avgs(row):
+    for idx in set(list(zip(*row.index))[0]):
+        if row[idx].isna().sum() == len(row[idx]):
+            row[idx, "AVG"] = 'NA'
+        elif (row[idx].isna().sum() - 1) <= len(row[idx]) / 2:
+            row[idx, "AVG"] = 0 if row[idx].mean() < 0.5 else 1
+        else:
+            row[idx, "AVG"] = 'IN'
+    return row
+
+
 @login_required
 def export(request):
     logger.info(f'Export requested by {request.user}.')
@@ -249,49 +260,12 @@ def export(request):
         tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
     index = pd.MultiIndex.from_tuples(tuples)
 
-    report_df = pd.DataFrame(index=Student.objects.values_list('no', 'name'), columns=index)
+    report_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=index)
 
-    records = list()
-    for student in Student.objects.filter(graduated_on__isnull=True):
-        poas = list()
-        for po in ProgramOutcome.objects.all():
-            por = ProgramOutcomeResult.objects.filter(
-                student=student,
-                program_outcome=po,
-                semester__in=semesters
-            )
-
-            from django.db.models import Count, Max
-
-            for crs in por.values('course').annotate(Count('id')).order_by():
-                if crs['id__count'] > 1:
-                    report_df.loc[student.no, (po.code, Course.objects.get(id=crs['course']).code)] = por.filter(course=crs['course']).order_by('-semester__period_order_value').first().satisfaction
-                else:
-                    report_df.loc[student.no, (po.code, Course.objects.get(id=crs['course']).code)] = por.filter(course=crs['course']).first().satisfaction
-
-            total_number_of_courses = len(po.course_set.all())
-
-            if len(por) == 0:
-                poas.append('NA')
-                report_df.loc[student.no, (po.code, 'AVG')] = 'NA'
-            elif total_number_of_courses == 1:
-                poas.append(por.first().satisfaction)
-                report_df.loc[student.no, (po.code, 'AVG')] = str(por.first().satisfaction)
-            elif len(por) <= (total_number_of_courses / 2):
-                poas.append('IN')
-                report_df.loc[student.no, (po.code, 'AVG')] = 'IN'
-            else:
-                satisfied_pors = por.filter(satisfaction=1)
-                if len(satisfied_pors) >= round(total_number_of_courses / 2):
-                    poas.append(1)
-                    report_df.loc[student.no, (po.code, 'AVG')] = '1'
-                else:
-                    poas.append(0)
-                    report_df.loc[student.no, (po.code, 'AVG')] = '0'
-
-        records.append([student.no, student.name] + poas)
+    for por in ProgramOutcomeResult.objects.filter(semester__in=semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+        report_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     
-    csv_report_df = pd.DataFrame(records, columns=["student_id", "name"] + [po.code for po in ProgramOutcome.objects.all()])
+    report_df.apply(calculate_avgs, axis=1)
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
@@ -302,7 +276,7 @@ def export(request):
         response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
     elif file_type == 'csv':
         csv_buffer = io.StringIO()
-        csv_report_df.to_csv(csv_buffer, index=False)
+        report_df.to_csv(csv_buffer, index=True)
         csv_buffer.seek(0)
         response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
         response["Content-Disposition"] = 'attachment; filename="report.csv"'

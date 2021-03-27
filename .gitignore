@@ -131,6 +131,7 @@ migration_files/
 media/
 persist/
 run-pclink.sh
+*.tar.gz
 
 # End of https://www.gitignore.io/api/django
 #
