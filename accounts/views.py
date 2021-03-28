@@ -25,7 +25,10 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 
 def register(request):
-    if settings.REGISTRATION_OPEN:
+    with open(settings.BASE_DIR / 'registration_state.txt', 'r') as reg_f:
+        reg_enabled = bool(int(reg_f.read()))
+
+    if reg_enabled:
         if request.method == 'POST':
             user_creation_form = UserRegisterForm(request.POST)
             if user_creation_form.is_valid():
@@ -43,8 +46,12 @@ def register(request):
 @login_required
 @staff_member_required
 def toggle_registrations(request):
-    settings.REGISTRATION_OPEN = not settings.REGISTRATION_OPEN
-    messages.success(request, 'Registration status: ' + str(settings.REGISTRATION_OPEN))
+    with open(settings.BASE_DIR / 'registration_state.txt', 'r+') as reg_f:
+        reg_enabled = bool(int(reg_f.read()))
+        reg_f.seek(0)
+        reg_f.write(str(int(not reg_enabled)))
+        messages.success(request, 'Registration status: ' + str(not reg_enabled))
+
     return redirect('profile')
 
 @login_required
