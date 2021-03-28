@@ -162,6 +162,8 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 LOGIN_REDIRECT_URL = 'pc-calc:home'
 
+REGISTRATION_OPEN = True
+
 if os.getenv('SCRIPT_NAME') is not None:
     LOGIN_URL = f'/{os.getenv("SCRIPT_NAME")}/accounts/login/'
 else:
