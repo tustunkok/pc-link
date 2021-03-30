@@ -33,12 +33,6 @@ class Semester(models.Model):
     period_order_value = models.IntegerField(default=1)
     active = models.BooleanField(default=False)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['active'],
-                condition=models.Q(active=True), name='unique_active')
-        ]
-
     def __str__(self):
         return self.year_interval + " " + self.period_name
 

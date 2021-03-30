@@ -35,6 +35,7 @@ class ProgramOutcomeForm(forms.Form):
     course = forms.ChoiceField(choices=get_courses, label="Select a course:")
     semester = forms.ChoiceField(choices=get_semesters, label="Select a semester:")
     outcome_file = forms.FileField(label="Upload the PÇ File:")
+    excempt_students = forms.BooleanField(required=False, label='Upload list of excempt students', help_text='Only check if you upload the list of except students.')
 
 
 class StudentBulkUploadForm(forms.Form):

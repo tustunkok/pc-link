@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     'maintenance_mode',
     'fontawesome-free',
     'pc_calculator',
-    'accounts',
+    'accounts.apps.AccountsConfig',
 ]
 
 MIDDLEWARE = [

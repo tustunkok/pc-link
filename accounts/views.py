@@ -70,10 +70,14 @@ def profile(request):
         p_form = ProfileUpdateForm(instance=request.user.profile)
         stu_bulk_form = StudentBulkUploadForm()
     
+    with open(settings.BASE_DIR / 'registration_state.txt', 'r') as reg_f:
+        reg_enabled = bool(int(reg_f.read()))
+    
     context = {
         'u_form': u_form,
         'p_form': p_form,
         'stu_bulk_form': stu_bulk_form,
+        'reg_status': reg_enabled
     }
 
     return render(request, 'accounts/profile.html', context)

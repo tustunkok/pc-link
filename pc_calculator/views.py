@@ -41,6 +41,7 @@ from pc_calculator.filters import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 
+from itertools import chain
 import pandas as pd
 import datetime
 import logging
@@ -205,13 +206,18 @@ def upload_program_outcome_file(request):
         course_code = form.cleaned_data['course']
         semester_pk = form.cleaned_data['semester']
         csvFile = form.cleaned_data['outcome_file']
+        excempt_students_upload = form.cleaned_data['excempt_students']
 
-        upload_result = handle_upload(request, course_code, semester_pk, csvFile)
+        if excempt_students_upload == True:
+            handle_excempt_students(request, csvFile)
+            logger.info(f'Excempt students course list is uploaded by {request.user.username}.')
+        else:
+            upload_result = handle_upload(request, course_code, semester_pk, csvFile)
 
-        if upload_result[0]:
-            messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
-            mail.send_mail(
-                f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
+            if upload_result[0]:
+                messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
+                mail.send_mail(
+                    f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
 f'''
 The following file has been SUBMITTED.
 ======================================================================
@@ -221,13 +227,13 @@ Number of Processed Students: {upload_result[1]}
 Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ======================================================================
 ''',
-                'pc-link@atilim.edu.tr',
-                [request.user.email],
-                fail_silently=False
-            )
-            logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
-        else:
-            messages.warning(request, 'No student from the department exists in the uploaded file.')
+                    'pc-link@atilim.edu.tr',
+                    [request.user.email],
+                    fail_silently=False
+                )
+                logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
+            else:
+                messages.warning(request, 'No student from the department exists in the uploaded file.')
     
     return render(request, 'pc_calculator/upload.html', { 'form': form })
 
@@ -289,7 +295,7 @@ def course_report(request):
     logger.info(f'The list of not uploaded courses is requested by {request.user}.')
     semester_id = request.POST['semester']
     semester = get_object_or_404(Semester, pk=semester_id)
-    uploaded_courses_set = set([course_id['course'] for course_id in ProgramOutcomeResult.objects.filter(semester=semester).values('course')])
+    uploaded_courses_set = set(chain.from_iterable(ProgramOutcomeFile.objects.filter(semester=semester).values_list('course')))
 
     return render(request, 'pc_calculator/upload_status.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})
 

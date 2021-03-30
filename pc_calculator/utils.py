@@ -179,6 +179,31 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
     return (success, num_of_students)
     
 
+def handle_excempt_students(request, csv_file):
+    csv_file_df = pd.read_csv(io.BytesIO(csv_file.read()), sep=None, engine='python')
+
+    if len(csv_file_df.columns) > 4:
+        messages.error(request, 'Something is wrong with the uploaded CSV file.')
+        return
+
+    for _, row in csv_file_df.head(5).iterrows():
+        semester_year_interval = row['semester'].split(' ')[0]
+        semester_period_name = row['semester'].split(' ')[1]
+
+        semester = get_object_or_404(Semester, year_interval=semester_year_interval, period_name=semester_period_name)
+        course = get_object_or_404(Course, code=row['course'])
+        student = get_object_or_404(Student, no=row['student_id'])
+
+        for po in course.program_outcomes.all():
+            ProgramOutcomeResult.objects.update_or_create(
+                semester=semester,
+                course=course,
+                student=student,
+                program_outcome=po,
+                defaults={'satisfaction': 1}
+            )
+
+
 def populate_program_outcomes(request):
     with open("migration_files/program_outcomes.csv", "r") as csv_file:
         file_iterable = iter(csv_file)

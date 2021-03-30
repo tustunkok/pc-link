@@ -10,11 +10,10 @@
         <p class="text-secondary">{{ user.email }}</p>
         <p><a href="{% url 'reset-password' %}">Reset Password</a></p>
         {% if user.is_superuser %}
-            <h5><i class="fas fa-exclamation-triangle"></i>NOT READY<i class="fas fa-exclamation-triangle"></i></h5>
-            <div class="card border-warning text-center mx-auto" style="max-width: 18rem;">
-                <div class="card-body text-warning">
+            <div class="card border-danger text-center mx-auto" style="max-width: 18rem;">
+                <div class="card-body text-danger">
                 <h5 class="card-title">Danger Zone</h5>
-                <p class="card-text"><a class="btn btn-outline-warning" href="{% url 'pc-calc:recalculate-all-pos' %}">Recalculate All PO Results</a></p>
+                <p class="card-text"><a class="btn btn-outline-danger" href="{% url 'pc-calc:recalculate-all-pos' %}">Recalculate All PO Results</a></p>
                 </div>
             </div>
         {% endif %}
@@ -43,7 +42,7 @@
                 </div>
             </form>
             <h4 class="border-bottom  mb-4">Maintenance</h4>
-            <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a> | <a href="{% url 'toggle-registrations' %}">Toggle Registrations</a></p>
+            <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a> | <a href="{% url 'toggle-registrations' %}">Toggle Registrations ({{ reg_status }})</a></p>
         {% endif %}
     </div>
 </div>
