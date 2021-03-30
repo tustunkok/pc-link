@@ -47,7 +47,7 @@ with open(BASE_DIR / 'persist' / 'secret_key.txt', 'r') as f:
 DEBUG = False
 ADMINS = [('Tolga Üstünkök', 'tolga.ustunkok@atilim.edu.tr')]
 
-ALLOWED_HOSTS = ['127.0.0.1', 'pc-link.atilim.edu.tr', '192.168.1.106']
+ALLOWED_HOSTS = ['127.0.0.1', 'pc-link.atilim.edu.tr', '192.168.1.106', 'tustunkok.ddns.net']
 
 
 # Application definition
