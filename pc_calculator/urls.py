@@ -26,10 +26,11 @@ urlpatterns = [
     path('api/students/', views.StudentList.as_view(), name='api-students'),
     path('api/program-outcomes/', views.ProgramOutcomeList.as_view(), name='api-po'),
 
-    path('report/', views.ReportFilterView.as_view(), name='report'),
+    path('report/', views.report_view, name='report'),
     path('upload/', views.upload_program_outcome_file, name='upload'),
     path('', views.upload_program_outcome_file, name='home'),
     path('export/', views.export, name='export'),
+    path('export-diff/', views.export_diff, name='export-diff'),
     path('course-report/', views.course_report, name='course-report'),
     path('help/', views.help, name='help'),
     path('manage/', views.ProgramOutcomeFileListView.as_view(), name='manage'),

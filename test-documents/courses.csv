@@ -1,0 +1,43 @@
+course_code,course_name
+CEAC105,General Chemistry
+CMPE109,Fundamentals of Computing
+CMPE113,Computer Programming I
+CMPE114,Computer Programming II
+CMPE225,Object-Oriented Programming
+CMPE226,Data Structures
+CMPE251,Discrete Computational Structures
+CMPE325,Study of Programming Languages
+CMPE341,Database Design and Management
+ENG101,English For Academic Purposes I
+ENG102,English For Academic Purposes II
+ENG201,English for Academic Purposes III
+ENG202,English for Academic Purposes IV
+ENG301,English for Occupational Purposes I
+ENG302,English for Occupational Purposes II
+HIST111,Principles of Atatürk and History of Turkish Revolution I (in English)
+HIST112,Principles of Atatürk and History of Turkish Revolution II (in English)
+HIST221,History of Civilization
+IE220,Probability and Statistics
+MATH151,Calculus I
+MATH152,Calculus II
+MATH275,Linear Algebra
+MATH276,Differential Equations
+PHYS101,General Physics I
+PHYS102,General Physics II
+SE112,Introduction to Software Engineering
+SE212,Human-Computer Interaction
+SE221,Software Requirements Engineering
+SE321,Object-Oriented Analysis and Design
+SE324,Software Project Management and Economics
+SE328,Algorithms and Optimization Methods
+SE344,Systems Software Validation and Testing
+SE345,Software Quality Assurance
+SE399,Summer Practice I
+SE493,Project Orientation
+SE494,Senior Project
+SE499,Summer Practice II
+TURK401,Turkish Language I
+TURK402,Turkish Language II
+MD,Multidisciplinary
+SG,Science Group
+CMPE431,Operating Systems

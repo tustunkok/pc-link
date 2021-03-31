@@ -132,6 +132,7 @@ media/
 persist/
 run-pclink.sh
 *.tar.gz
+test-documents.zip
 
 # End of https://www.gitignore.io/api/django
 #

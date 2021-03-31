@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'maintenance_mode',
     'fontawesome-free',
+    'coverage',
     'pc_calculator',
     'accounts.apps.AccountsConfig',
 ]

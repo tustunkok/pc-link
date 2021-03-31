@@ -192,7 +192,7 @@ def handle_excempt_students(request, csv_file):
 
         semester = get_object_or_404(Semester, year_interval=semester_year_interval, period_name=semester_period_name)
         course = get_object_or_404(Course, code=row[2])
-        student = get_object_or_404(Student, no=row['student_id'])
+        student = get_object_or_404(Student, no=row[0])
 
         for po in course.program_outcomes.all():
             ProgramOutcomeResult.objects.update_or_create(

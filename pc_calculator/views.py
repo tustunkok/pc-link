@@ -37,7 +37,6 @@ from django_filters.views import FilterView
 
 from pc_calculator.models import *
 from pc_calculator.serializers import *
-from pc_calculator.filters import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 
@@ -149,48 +148,11 @@ class ProgramOutcomeFileDeleteOnlyFileView(LoginRequiredMixin, generic.DeleteVie
         return super().delete(request, *args, **kwargs)
 
 
-class ReportFilterView(LoginRequiredMixin, FilterView):
-    model = ProgramOutcomeResult
-    template_name = 'pc_calculator/report.html'
-    filterset_class = ProgramOutcomeResultFilter
-    paginate_by = 30
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        resultant_queryset = context['page_obj'].object_list
-        export_report_form = ExportReportForm()
-        context['export_form'] = export_report_form
-
-        students = Student.objects.filter(id__in=set(x[0] for x in resultant_queryset.values_list('student')))
-        pos = ProgramOutcome.objects.filter(id__in=set(x[0] for x in resultant_queryset.values_list('program_outcome')))
-
-        context['pos'] = pos
-        context['students'] = list()
-
-        for student in students:
-            poas = list()
-            for po in pos:
-                por = ProgramOutcomeResult.objects.filter(
-                    student=student,
-                    program_outcome=po
-                )
-                total_number_of_courses = len(po.course_set.all())
-
-                if len(por) == 0:
-                    poas.append('NA')
-                else:
-                    satisfied_pors = por.filter(satisfaction=1)
-                    if len(satisfied_pors) >= round(total_number_of_courses / 2):
-                        poas.append(1)
-                    else:
-                        poas.append(0)
-
-            context['students'].append({
-                'name': student.name,
-                'poas': poas,
-            })
-
-        return context
+@login_required
+def report_view(request):
+    export_report_form = ExportReportForm()
+    export_diff_report_form = ExportDiffReportForm()
+    return render(request, 'pc_calculator/report.html', {'export_form': export_report_form, 'export_diff_form': export_diff_report_form})
 
 
 def help(request):
@@ -286,6 +248,60 @@ def export(request):
         csv_buffer.seek(0)
         response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
         response["Content-Disposition"] = 'attachment; filename="report.csv"'
+
+    return response
+
+
+@login_required
+def export_diff(request):
+    logger.info(f'Diff requested by {request.user}.')
+    export_diff_report_form = ExportDiffReportForm(request.POST)
+
+    if request.method != 'POST' or not export_diff_report_form.is_valid():
+        return redirect('pc-calc:report')
+    
+    file_type = export_diff_report_form.cleaned_data['export_type']
+    first_semesters = export_diff_report_form.cleaned_data['first_semesters']
+    second_semesters = export_diff_report_form.cleaned_data['second_semesters']
+
+    logger.debug(f'Diffing semesters: {first_semesters} and {second_semesters}')
+
+    tuples = list()
+    for po in ProgramOutcome.objects.all():
+        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
+    index = pd.MultiIndex.from_tuples(tuples)
+
+    first_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=index)
+    for por in ProgramOutcomeResult.objects.filter(semester__in=first_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+        first_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
+    first_semesters_df.apply(calculate_avgs, axis=1)
+
+    second_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=index)
+    for por in ProgramOutcomeResult.objects.filter(semester__in=second_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+        second_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
+    second_semesters_df.apply(calculate_avgs, axis=1)
+
+    first_semesters_report_df = first_semesters_df.loc[:, (slice(None), 'AVG')]
+    second_semesters_report_df = second_semesters_df.loc[:, (slice(None), 'AVG')]
+
+    first_semesters_report_df.columns = first_semesters_report_df.columns.droplevel(1)
+    second_semesters_report_df.columns = second_semesters_report_df.columns.droplevel(1)
+
+    report_df = first_semesters_report_df.compare(second_semesters_report_df, align_axis=0, keep_equal=True)
+
+    if file_type == 'xlsx':
+        xlsx_buffer = io.BytesIO()
+        with pd.ExcelWriter(xlsx_buffer) as xlwriter:
+            report_df.to_excel(xlwriter)
+        xlsx_buffer.seek(0)
+        response = HttpResponse(xlsx_buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response["Content-Disposition"] = 'attachment; filename="report_diffs.xlsx"'
+    elif file_type == 'csv':
+        csv_buffer = io.StringIO()
+        report_df.to_csv(csv_buffer, index=True)
+        csv_buffer.seek(0)
+        response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
+        response["Content-Disposition"] = 'attachment; filename="report_diffs.csv"'
 
     return response
 
