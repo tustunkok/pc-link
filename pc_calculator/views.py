@@ -287,7 +287,11 @@ def export_diff(request):
     first_semesters_report_df.columns = first_semesters_report_df.columns.droplevel(1)
     second_semesters_report_df.columns = second_semesters_report_df.columns.droplevel(1)
 
-    report_df = first_semesters_report_df.compare(second_semesters_report_df, align_axis=0, keep_equal=True)
+    report_df = first_semesters_report_df.compare(second_semesters_report_df, align_axis=0)
+    fs_name = get_object_or_404(Semester, pk=first_semesters[-1])
+    ss_name = get_object_or_404(Semester, pk=second_semesters[-1])
+
+    report_df.rename(index={'self': str(fs_name),'other': str(ss_name)}, inplace=True)
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
