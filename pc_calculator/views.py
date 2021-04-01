@@ -264,6 +264,10 @@ def export_diff(request):
     first_semesters = export_diff_report_form.cleaned_data['first_semesters']
     second_semesters = export_diff_report_form.cleaned_data['second_semesters']
 
+    if first_semesters == second_semesters:
+        messages.warning(request, 'The two semester ranges are equal.')
+        return redirect('pc-calc:report')
+
     logger.debug(f'Diffing semesters: {first_semesters} and {second_semesters}')
 
     tuples = list()

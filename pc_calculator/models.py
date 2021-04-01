@@ -35,6 +35,9 @@ class Semester(models.Model):
 
     def __str__(self):
         return self.year_interval + " " + self.period_name
+    
+    def __repr__(self):
+        return '[' + ":".join((self.year_interval, self.period_name)) + ']'
 
 class ProgramOutcome(models.Model):
     code = models.CharField(max_length=5)
@@ -85,6 +88,9 @@ class ProgramOutcomeResult(models.Model):
         return self.student.name + " - " + self.course.code + " - [" + \
             self.program_outcome.code + "] - " + str(self.semester) + " - " + \
                 str(self.satisfaction)
+    
+    def __repr__(self):
+        return '[' + ":".join((self.student.no, self.course.code, self.program_outcome.code, repr(self.semester), str(self.satisfaction))) + ']'
     
     class Meta:
         ordering = ['course']

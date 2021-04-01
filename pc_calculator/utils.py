@@ -127,19 +127,11 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
         except:
             pass
 
-        student = Student.objects.filter(no=row['student_id'], graduated_on__isnull=True).first()
+        student = Student.objects.filter(no=row['student_id']).first()
 
         if student is not None:
             for po_idx, po in enumerate(file_pos):
-                try:
-                    program_outcome = ProgramOutcome.objects.get(
-                        code=po.strip()
-                    )
-                except:
-                    messages.error(request, f"No program outcome found named as {po}.")
-                    logger.error(f"[User: {request.user}] - No program outcome found named as {po}.")
-                    success = False
-                    return (success, num_of_students)
+                program_outcome = get_object_or_404(ProgramOutcome, code=po.strip())
                 
                 program_outcome_result = ProgramOutcomeResult.objects.filter(
                     student=student,
@@ -149,12 +141,6 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
                 ).first()
 
                 sat_input_value = 1 if str(row.iloc[po_idx + 2]) == "1" or str(row.iloc[po_idx + 2]) == "M" else 0
-                
-                try:
-                    ProgramOutcomeResult.objects.exclude(semester=semester).get(course=course, student=student, program_outcome=program_outcome).delete()
-                    logger.debug(f'Existing records for semester {semester} are replaced with new ones for student {student}, course {course}, and program outcome {program_outcome}')
-                except:
-                    pass
 
                 if program_outcome_result:
                     logger.debug(f'[User: {request.user}] - Existing ProgramOutcomeResult record {program_outcome_result} updated. Previously {program_outcome_result.satisfaction}, now {sat_input_value}')
