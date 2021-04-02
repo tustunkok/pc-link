@@ -197,7 +197,7 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
             else:
                 messages.warning(request, 'No student from the department exists in the uploaded file.')
     
-    return render(request, 'pc_calculator/upload.html', { 'form': form })
+    return render(request, 'pc_calculator/upload.html', { 'form': form, 'active_semester_count': Semester.objects.filter(active=True).count() })
 
 
 def calculate_avgs(row):
@@ -226,12 +226,17 @@ def export(request):
     tuples = list()
     for po in ProgramOutcome.objects.all():
         tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
-    index = pd.MultiIndex.from_tuples(tuples)
+    columns = pd.MultiIndex.from_tuples(tuples)
 
-    report_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=index)
+    report_df = pd.DataFrame(index=map(list, zip(*list(Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name')) + [('Analysis', 'Total Number of Assessed Students'), ('Analysis', 'Number of Successful Students'), ('Analysis', 'Successful Student Percantage'), ('Analysis', 'Unsuccessful Student Percantage')])), columns=columns)
 
     for por in ProgramOutcomeResult.objects.filter(semester__in=semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         report_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
+
+    report_df.iloc[-4, :] = report_df.iloc[:-4, :].apply(lambda x: x.count(), axis=0) # Total Number of Assessed Students
+    report_df.iloc[-3, :] = report_df.iloc[:-4, :].apply(lambda x: x.sum(), axis=0) # Number of Successful Students
+    report_df.iloc[-2, :] = report_df.iloc[:-4, :].apply(lambda x: x.mean(), axis=0) # Successful Student Percantage
+    report_df.iloc[-1, :] = report_df.iloc[:-4, :].apply(lambda x: (x.count() - x.sum()) / x.count(), axis=0) # Unsuccessful Student Percantage
     
     report_df.apply(calculate_avgs, axis=1)
 
@@ -366,7 +371,7 @@ def recalculate_all_pos(request):
 
         with program_outcome_file.pc_file.open(mode='rb') as csv_file:
             contents_byte_str = csv_file.read()
-            enc, _ = force_decode(contents_byte_str)
+            enc = force_decode(contents_byte_str)
 
         csv_file_df = pd.read_csv(program_outcome_file.pc_file.path, sep=None, engine='python', encoding=enc)
         file_pos = set(csv_file_df.columns[2:])

@@ -32,32 +32,32 @@ from django.http import HttpResponse
 
 logger = logging.getLogger('pc_link_custom_logger')
 
-def validate_uploaded_file(request, delimiter, file_contents, program_outcome_file):
+def validate_uploaded_file(request, test_df, program_outcome_file):
     failed = False
     logger.debug(f"[User: {request.user}] - Uploaded file contents are started to be validated.")
 
-    try:
-        test_df = pd.read_csv(io.StringIO(file_contents), sep=delimiter)
-    except pd.errors.ParserError as e:
-        logger.error(f'[User: {request.user}] - File cannot be parsed: {e}')
-    
     line_analysis_U = test_df.iloc[:, 2:].apply(lambda x: all(x.values == 'U') if 'U' in x.values else True, axis=1)
     line_analysis = test_df.iloc[:, 2:].isin(['U', 'M', '1', '0', 1, 0]).all(axis=1)
 
     if not test_df.columns[:2].isin(['student_id', 'name']).all():
         messages.error(request, 'The headers of the file should be student_id, name, and PÇ codes.')
+        logger.error('The headers of the file should be student_id, name, and PÇ codes.')
         os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
         program_outcome_file.delete()
         failed = True
 
     if not line_analysis_U.all():
         messages.error(request, f'Line(s) {", ".join((np.nonzero(line_analysis_U.values == False)[0] + 2).astype(str).tolist())} of the uploaded file is wrong.')
+        logger.error(f'Line(s) {", ".join((np.nonzero(line_analysis_U.values == False)[0] + 2).astype(str).tolist())} of the uploaded file is wrong.')
         os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
         program_outcome_file.delete()
         failed = True
     
     if not line_analysis.all():
         messages.error(request, f'Wrong input value in line(s) {", ".join((np.nonzero(line_analysis.values == False)[0] + 2).astype(str).tolist())} of the uploaded file.')
+        logger.error(f'Wrong input value in line(s) {", ".join((np.nonzero(line_analysis.values == False)[0] + 2).astype(str).tolist())} of the uploaded file.')
+        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
+        program_outcome_file.delete()
         failed = True
     
     return failed
@@ -66,9 +66,12 @@ def validate_uploaded_file(request, delimiter, file_contents, program_outcome_fi
 def force_decode(string, codecs=['utf8', 'cp1254', 'cp1252']):
     for i in codecs:
         try:
-            return (i, string.decode(i))
+            string.decode(i)
+            return i
         except UnicodeDecodeError:
             pass
+    
+    return None
 
 
 def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_file=None):
@@ -91,24 +94,25 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
     
     with program_outcome_file.pc_file.open(mode='rb') as csv_file:
         contents_byte_str = csv_file.read()
-        enc, det_result = force_decode(contents_byte_str)
+        enc = force_decode(contents_byte_str)
 
-        if det_result is not None:
+        if enc is not None:
             logger.debug(f'[User: {request.user}] - The encoding of uploaded file {program_outcome_file.pc_file} is determined as {enc}.')
         else:
-            messages.error(request, f'File encoding cannot be determined. It should be one of {["cp1254", "utf_8", "cp1252"]}')
+            messages.error(request, f'File encoding cannot be determined. It should be one of {["cp1254", "utf_8"]}')
             logger.error(f'[User: {request.user}] - The encoding of uploaded file cannot be determined.')
             return (success, num_of_students)
 
-    result = str(det_result).strip()
-
-    dialect = csv.Sniffer().sniff(result[:1024] or result, delimiters=[',', ';'])
-    logger.debug(f"[User: {request.user}] - The delimiter of uploaded file {program_outcome_file.pc_file} is determined as '{dialect.delimiter}'.")
-
-    if validate_uploaded_file(request, dialect.delimiter, result, program_outcome_file): # if failed
+    try:
+        result_df = pd.read_csv(program_outcome_file.pc_file.path, sep=None, engine='python', encoding=enc)
+    except pd.errors.ParserError as e:
+        logger.error(f'[User: {request.user}] - File cannot be parsed: {e}')
+        messages.error(request, 'The uploaded file cannot be parsed.')
         return (success, num_of_students)
-    
-    result_df = pd.read_csv(io.StringIO(result), sep=dialect.delimiter)
+
+    if validate_uploaded_file(request, result_df, program_outcome_file): # if failed
+        return (success, num_of_students)
+
     file_pos = set(result_df.columns[2:])
     uploaded_course_pos = set([x.code for x in course.program_outcomes.all()])
 

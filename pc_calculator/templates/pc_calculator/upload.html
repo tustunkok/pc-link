@@ -12,7 +12,11 @@
             represents the <b>name</b> and <b>surname</b> of the student, and the remaining columns are the course 
             outcomes (PÇ1, PÇ2, etc.) of the course. The names of those columns should be the exact codes of the PÇs.</p>
         <div class="alert alert-warning" role="alert">
-            You have to choose the correct <b>course</b> that is relevant to the file to be uploaded.
+            {% if active_semester_count > 0 %}
+                You have to choose the correct <b>course</b> that is relevant to the file to be uploaded.
+            {% else %}
+                Program outcome uploads are closed at the moment.
+            {% endif %}
         </div>
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}

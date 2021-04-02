@@ -8,6 +8,8 @@ from pc_calculator.models import *
 from pc_calculator.forms import *
 import pandas as pd
 import io
+import os
+import shutil
 
 class LoggedInUploadViewTest(TestCase):
 
@@ -129,6 +131,68 @@ class LoggedInUploadViewTest(TestCase):
             self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
         
         self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), ['[44629785700:CMPE113:PÇ13:[2019-2020:Spring]:1]', '[21098683261:CMPE113:PÇ13:[2019-2020:Spring]:1]', '[17763516392:CMPE113:PÇ13:[2019-2020:Spring]:1]', '[62475310697:CMPE113:PÇ13:[2019-2020:Spring]:0]', '[54296286776:CMPE113:PÇ13:[2019-2020:Spring]:1]', '[12031872585:CMPE113:PÇ13:[2019-2020:Spring]:1]', '[17763516392:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[62475310697:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[54296286776:CMPE113:PÇ13:[2020-2021:Fall]:1]'], ordered=False)
+    
+    def test_wrong_column_names(self):
+        """
+        Upload page should reject the malformed csv column names.
+        """
+
+        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_wrong_column_name.csv', 'rb') as fp:
+            response = self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
+        
+        self.assertContains(response, 'The headers of the file should be student_id, name, and PÇ codes.')
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
+    
+    def test_non_u_all(self):
+        """
+        Upload page should reject the csv files with lines that does not have U in all columns.
+        """
+
+        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_nonU_incorrect.csv', 'rb') as fp:
+            response = self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 3, 'outcome_file': fp})
+        
+        program_outcome_file_rec_count = ProgramOutcomeFile.objects.filter(semester=3, user__username='testuser', course__code='SE493').count()
+
+        self.assertContains(response, 'Line(s) 3 of the uploaded file is wrong.')
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
+        self.assertEqual(program_outcome_file_rec_count, 0)
+        self.assertFalse(os.path.exists(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser' / 'pc_sub_se493_nonU_incorrect.csv'))
+    
+    def test_wrong_indicator_letter(self):
+        """
+        Upload page should reject the csv files with lines that does not have any of 1, 0, U, or M.
+        """
+
+        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_wrong_indicator_letter.csv', 'rb') as fp:
+            response = self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 3, 'outcome_file': fp})
+        
+        program_outcome_file_rec_count = ProgramOutcomeFile.objects.filter(semester=3, user__username='testuser', course__code='SE493').count()
+
+        self.assertContains(response, 'Wrong input value in line(s) 7 of the uploaded file.')
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
+        self.assertEqual(program_outcome_file_rec_count, 0)
+        self.assertFalse(os.path.exists(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser' / 'pc_sub_se493_wrong_indicator_letter.csv'))
+    
+    def test_any_delimiter(self):
+        """
+        Upload page should accept the csv files with any delimiters.
+        """
+
+        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_tab_delimited_correct.csv', 'rb') as fp:
+            response = self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
+        
+        self.assertContains(response, 'successfuly uploaded')
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), ['[44629785700:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[21098683261:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[17763516392:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[62475310697:CMPE113:PÇ13:[2020-2021:Fall]:0]', '[54296286776:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[12031872585:CMPE113:PÇ13:[2020-2021:Fall]:1]'], ordered=False)
+        self.assertTrue(os.path.exists(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser' / 'pc_sub_cmpe113_tab_delimited_correct.csv'))
+
+
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser', ignore_errors=True)
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Spring' / 'user_testuser', ignore_errors=True)
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Fall' / 'user_testuser', ignore_errors=True)
+        super().tearDownClass()
 
 
 class ExportViewTest(TestCase):
@@ -169,8 +233,8 @@ class ExportViewTest(TestCase):
         downloaded_f = io.BytesIO(response.content)
         downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
 
-        self.assertEqual(downloaded_df.loc[62475310697, ('PÇ13', 'CMPE113')][0], 1.0)
-        self.assertEqual(downloaded_df.loc[62475310697, ('PÇ13', 'AVG')][0], 'IN')
+        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'CMPE113')][0], 1.0)
+        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'AVG')][0], 'IN')
     
     def test_multiple_semester_same_course_entered_csv_majority_zero_report(self):
         with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_correct.csv', 'rb') as fp:
@@ -186,6 +250,13 @@ class ExportViewTest(TestCase):
         downloaded_f = io.BytesIO(response.content)
         downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
 
-        self.assertEqual(downloaded_df.loc[62475310697, ('PÇ11b', 'SE493')][0], 1.0)
-        self.assertEqual(downloaded_df.loc[62475310697, ('PÇ11b', 'AVG')][0], 1.0)
+        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'SE493')][0], 1.0)
+        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'AVG')][0], 1.0)
+    
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser', ignore_errors=True)
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Spring' / 'user_testuser', ignore_errors=True)
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Fall' / 'user_testuser', ignore_errors=True)
+        super().tearDownClass()
 
