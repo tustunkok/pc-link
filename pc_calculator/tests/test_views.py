@@ -92,12 +92,12 @@ class LoggedInUploadViewTest(TestCase):
 
     # def test_non_c1254_utf8_correct_encoding(self):
     #     """
-    #     Upload page should accept c1254 encoding format.
+    #     Upload page should accept UTF-8, c1254, or cp1252 encoding format.
     #     """
-    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_utf7_correct.csv', 'rb') as fp:
+    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_diffenc_correct.csv', 'rb') as fp:
     #         response = self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
         
-    #     self.assertContains(response, f'File encoding cannot be determined. It should be one of {["cp1254", "utf_8", "cp1252"]}')
+    #     self.assertContains(response, 'The file encoding should be one of UTF-8, Windows 1254, or Windows 1252.')
     #     self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
 
     def test_non_csv(self):
@@ -107,7 +107,7 @@ class LoggedInUploadViewTest(TestCase):
         with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_correct.ods', 'rb') as fp:
             response = self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
         
-        self.assertContains(response, 'Wrong file type: .ods. It should be a CSV file.')
+        self.assertContains(response, 'File type should be CSV. Not .ods')
         self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
     
     def test_u_correct(self):
@@ -140,7 +140,7 @@ class LoggedInUploadViewTest(TestCase):
         with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_wrong_column_name.csv', 'rb') as fp:
             response = self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
         
-        self.assertContains(response, 'The headers of the file should be student_id, name, and PÇ codes.')
+        self.assertContains(response, 'The headers of the file should be student_id, name, and exact PÇ codes.')
         self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
     
     def test_non_u_all(self):
@@ -153,7 +153,7 @@ class LoggedInUploadViewTest(TestCase):
         
         program_outcome_file_rec_count = ProgramOutcomeFile.objects.filter(semester=3, user__username='testuser', course__code='SE493').count()
 
-        self.assertContains(response, 'Line(s) 3 of the uploaded file is wrong.')
+        self.assertContains(response, 'The usage of U is wrong in lines 3.')
         self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
         self.assertEqual(program_outcome_file_rec_count, 0)
         self.assertFalse(os.path.exists(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser' / 'pc_sub_se493_nonU_incorrect.csv'))
@@ -168,7 +168,7 @@ class LoggedInUploadViewTest(TestCase):
         
         program_outcome_file_rec_count = ProgramOutcomeFile.objects.filter(semester=3, user__username='testuser', course__code='SE493').count()
 
-        self.assertContains(response, 'Wrong input value in line(s) 7 of the uploaded file.')
+        self.assertContains(response, 'Following lines have unexpected characters: 7.')
         self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
         self.assertEqual(program_outcome_file_rec_count, 0)
         self.assertFalse(os.path.exists(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser' / 'pc_sub_se493_wrong_indicator_letter.csv'))

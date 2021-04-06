@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'maintenance_mode',
     'fontawesome-free',
     'coverage',
+    'django_extensions',
     'pc_calculator',
     'accounts.apps.AccountsConfig',
 ]

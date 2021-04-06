@@ -161,7 +161,7 @@ def help(request):
 
 @login_required
 def upload_program_outcome_file(request):
-    form = ProgramOutcomeForm(request.POST or None, request.FILES or None)
+    form = ProgramOutcomeForm(request.POST or None, request.FILES or None, user=request.user)
 
     if form.is_valid():
         logger.info(f'PO file upload requested by {request.user}.')
@@ -191,7 +191,7 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ''',
                     'pc-link@atilim.edu.tr',
                     [request.user.email],
-                    fail_silently=False
+                    fail_silently=True
                 )
                 logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
             else:
@@ -278,14 +278,14 @@ def export_diff(request):
     tuples = list()
     for po in ProgramOutcome.objects.all():
         tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
-    index = pd.MultiIndex.from_tuples(tuples)
+    columns = pd.MultiIndex.from_tuples(tuples)
 
-    first_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=index)
+    first_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
     for por in ProgramOutcomeResult.objects.filter(semester__in=first_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         first_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     first_semesters_df.apply(calculate_avgs, axis=1)
 
-    second_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=index)
+    second_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
     for por in ProgramOutcomeResult.objects.filter(semester__in=second_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         second_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     second_semesters_df.apply(calculate_avgs, axis=1)

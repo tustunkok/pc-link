@@ -32,37 +32,6 @@ from django.http import HttpResponse
 
 logger = logging.getLogger('pc_link_custom_logger')
 
-def validate_uploaded_file(request, test_df, program_outcome_file):
-    failed = False
-    logger.debug(f"[User: {request.user}] - Uploaded file contents are started to be validated.")
-
-    line_analysis_U = test_df.iloc[:, 2:].apply(lambda x: all(x.values == 'U') if 'U' in x.values else True, axis=1)
-    line_analysis = test_df.iloc[:, 2:].isin(['U', 'M', '1', '0', 1, 0]).all(axis=1)
-
-    if not test_df.columns[:2].isin(['student_id', 'name']).all():
-        messages.error(request, 'The headers of the file should be student_id, name, and PÇ codes.')
-        logger.error('The headers of the file should be student_id, name, and PÇ codes.')
-        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
-        program_outcome_file.delete()
-        failed = True
-
-    if not line_analysis_U.all():
-        messages.error(request, f'Line(s) {", ".join((np.nonzero(line_analysis_U.values == False)[0] + 2).astype(str).tolist())} of the uploaded file is wrong.')
-        logger.error(f'Line(s) {", ".join((np.nonzero(line_analysis_U.values == False)[0] + 2).astype(str).tolist())} of the uploaded file is wrong.')
-        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
-        program_outcome_file.delete()
-        failed = True
-    
-    if not line_analysis.all():
-        messages.error(request, f'Wrong input value in line(s) {", ".join((np.nonzero(line_analysis.values == False)[0] + 2).astype(str).tolist())} of the uploaded file.')
-        logger.error(f'Wrong input value in line(s) {", ".join((np.nonzero(line_analysis.values == False)[0] + 2).astype(str).tolist())} of the uploaded file.')
-        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
-        program_outcome_file.delete()
-        failed = True
-    
-    return failed
-
-
 def force_decode(string, codecs=['utf8', 'cp1254', 'cp1252']):
     for i in codecs:
         try:
@@ -80,12 +49,6 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
     course = get_object_or_404(Course, code=course_code)
     semester = get_object_or_404(Semester, pk=semester_pk)
 
-    file_type = os.path.splitext(str(csvFile))[1].lower()
-    if file_type != '.csv':
-        messages.error(request, f"Wrong file type: {file_type}. It should be a CSV file.")
-        logger.error(f'[User: {request.user}] - File type found to be {file_type} for the uploaded file {csvFile}, it should be CSV.')
-        return (success, num_of_students)
-
     if program_outcome_file is None :
         program_outcome_file = ProgramOutcomeFile.objects.create(pc_file=csvFile, user=request.user, semester=semester, course=course)
         logger.debug(f'[User: {request.user}] - New ProgramOutcomeFile record created with details {program_outcome_file}.')
@@ -96,32 +59,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
         contents_byte_str = csv_file.read()
         enc = force_decode(contents_byte_str)
 
-        if enc is not None:
-            logger.debug(f'[User: {request.user}] - The encoding of uploaded file {program_outcome_file.pc_file} is determined as {enc}.')
-        else:
-            messages.error(request, f'File encoding cannot be determined. It should be one of {["cp1254", "utf_8"]}')
-            logger.error(f'[User: {request.user}] - The encoding of uploaded file cannot be determined.')
-            return (success, num_of_students)
-
-    try:
-        result_df = pd.read_csv(program_outcome_file.pc_file.path, sep=None, engine='python', encoding=enc)
-    except pd.errors.ParserError as e:
-        logger.error(f'[User: {request.user}] - File cannot be parsed: {e}')
-        messages.error(request, 'The uploaded file cannot be parsed.')
-        return (success, num_of_students)
-
-    if validate_uploaded_file(request, result_df, program_outcome_file): # if failed
-        return (success, num_of_students)
-
-    file_pos = set(result_df.columns[2:])
-    uploaded_course_pos = set([x.code for x in course.program_outcomes.all()])
-
-    if not file_pos == uploaded_course_pos:
-        logger.error(f'[User: {request.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
-        messages.error(request, f'The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')
-        os.remove(os.path.join(settings.MEDIA_ROOT, str(program_outcome_file.pc_file)))
-        program_outcome_file.delete()
-        return (success, num_of_students)
+    result_df = pd.read_csv(program_outcome_file.pc_file.path, sep=None, engine='python', encoding=enc)
     
     for idx, row in result_df.iterrows():
         try:
@@ -134,7 +72,7 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
         student = Student.objects.filter(no=row['student_id']).first()
 
         if student is not None:
-            for po_idx, po in enumerate(file_pos):
+            for po_idx, po in enumerate(set(result_df.columns[2:])):
                 program_outcome = get_object_or_404(ProgramOutcome, code=po.strip())
                 
                 program_outcome_result = ProgramOutcomeResult.objects.filter(
