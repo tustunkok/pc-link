@@ -24,8 +24,10 @@ from django.utils.timezone import now
 def upload_to_func(instance, filename):
     return f'uploads/{str(instance.semester)}/user_{instance.user.username}/{filename}'
 
+
 class User(AbstractUser):
     pass
+
 
 class Semester(models.Model):
     year_interval = models.CharField(max_length=9)
@@ -39,12 +41,14 @@ class Semester(models.Model):
     def __repr__(self):
         return '[' + ":".join((self.year_interval, self.period_name)) + ']'
 
+
 class ProgramOutcome(models.Model):
     code = models.CharField(max_length=5)
     description = models.TextField()
 
     def __str__(self):
         return self.code
+
 
 class Course(models.Model):
     code = models.CharField(max_length=9)
@@ -53,6 +57,7 @@ class Course(models.Model):
 
     def __str__(self):
         return self.code
+
 
 class ProgramOutcomeFile(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
@@ -67,6 +72,7 @@ class ProgramOutcomeFile(models.Model):
     def filename(self):
         return os.path.basename(self.pc_file.name)
 
+
 class Student(models.Model):
     no = models.CharField(max_length=11)
     name = models.CharField(max_length=60)
@@ -76,6 +82,7 @@ class Student(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class ProgramOutcomeResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)

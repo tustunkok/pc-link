@@ -69,6 +69,7 @@ def profile(request):
         u_form = UserUpdateForm(instance=request.user)
         p_form = ProfileUpdateForm(instance=request.user.profile)
         stu_bulk_form = StudentBulkUploadForm()
+        excempt_stu_form = StudentBulkUploadForm()
     
     with open(settings.BASE_DIR / 'registration_state.txt', 'r') as reg_f:
         reg_enabled = bool(int(reg_f.read()))
@@ -77,7 +78,14 @@ def profile(request):
         'u_form': u_form,
         'p_form': p_form,
         'stu_bulk_form': stu_bulk_form,
+        'excempt_stu_form': excempt_stu_form,
         'reg_status': reg_enabled
     }
 
     return render(request, 'accounts/profile.html', context)
+
+
+@login_required
+@staff_member_required
+def test_server_error(request):
+    return redirect('non-existing-page')

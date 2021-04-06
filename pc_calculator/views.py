@@ -168,18 +168,13 @@ def upload_program_outcome_file(request):
         course_code = form.cleaned_data['course']
         semester_pk = form.cleaned_data['semester']
         csvFile = form.cleaned_data['outcome_file']
-        excempt_students_upload = form.cleaned_data['excempt_students']
 
-        if excempt_students_upload == True:
-            handle_excempt_students(request, csvFile)
-            logger.info(f'Excempt students course list is uploaded by {request.user.username}.')
-        else:
-            upload_result = handle_upload(request, course_code, semester_pk, csvFile)
+        upload_result = handle_upload(request, course_code, semester_pk, csvFile)
 
-            if upload_result[0]:
-                messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
-                mail.send_mail(
-                    f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
+        if upload_result[0]:
+            messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
+            mail.send_mail(
+                f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
 f'''
 The following file has been SUBMITTED.
 ======================================================================
@@ -189,16 +184,56 @@ Number of Processed Students: {upload_result[1]}
 Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ======================================================================
 ''',
-                    'pc-link@atilim.edu.tr',
-                    [request.user.email],
-                    fail_silently=True
-                )
-                logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
-            else:
-                messages.warning(request, 'No student from the department exists in the uploaded file.')
+                'pc-link@atilim.edu.tr',
+                [request.user.email],
+                fail_silently=False
+            )
+            logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
+        else:
+            messages.warning(request, 'No student from the department exists in the uploaded file.')
     
     return render(request, 'pc_calculator/upload.html', { 'form': form, 'active_semester_count': Semester.objects.filter(active=True).count() })
 
+
+@login_required
+@staff_member_required
+def handle_excempt_students(request):
+    if request.method == 'POST':
+        form = StudentBulkUploadForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            csv_file = form.cleaned_data['students_csv_file']
+            csv_file_df = pd.read_csv(io.BytesIO(csv_file.read()), sep=None, engine='python')
+
+            if len(csv_file_df.columns) != 4:
+                messages.error(request, f'CSV file should have exactly 4 columns. Found {len(csv_file_df.columns)} columns.')
+                return redirect('profile')
+
+            try:
+                for _, row in csv_file_df.iterrows():
+                    semester_year_interval = row[3].split(' ')[0]
+                    semester_period_name = row[3].split(' ')[1]
+
+                    semester = get_object_or_404(Semester, year_interval=semester_year_interval, period_name=semester_period_name)
+                    course = get_object_or_404(Course, code=row[2])
+                    student = get_object_or_404(Student, no=row[0])
+
+                    for po in course.program_outcomes.all():
+                        ProgramOutcomeResult.objects.update_or_create(
+                            semester=semester,
+                            course=course,
+                            student=student,
+                            program_outcome=po,
+                            defaults={'satisfaction': 1}
+                        )
+                
+                messages.success(request, 'File is successfuly processed.')
+            except Exception as e:
+                messages.error(request, f'Error occured: {e}')
+            
+    return redirect('profile')
+            
+            
 
 def calculate_avgs(row):
     for idx in set(list(zip(*row.index))[0]):

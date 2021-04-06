@@ -105,33 +105,6 @@ def handle_upload(request, course_code, semester_pk, csvFile, program_outcome_fi
             logger.debug(f'[User: {request.user}] - No student found with an id {row[0]}.')
 
     return (success, num_of_students)
-    
-
-def handle_excempt_students(request, csv_file):
-    csv_file_df = pd.read_csv(io.BytesIO(csv_file.read()), sep=None, engine='python')
-
-    if len(csv_file_df.columns) != 4:
-        messages.error(request, 'Something is wrong with the uploaded CSV file.')
-        return
-
-    for _, row in csv_file_df.iterrows():
-        semester_year_interval = row[3].split(' ')[0]
-        semester_period_name = row[3].split(' ')[1]
-
-        semester = get_object_or_404(Semester, year_interval=semester_year_interval, period_name=semester_period_name)
-        course = get_object_or_404(Course, code=row[2])
-        student = get_object_or_404(Student, no=row[0])
-
-        for po in course.program_outcomes.all():
-            ProgramOutcomeResult.objects.update_or_create(
-                semester=semester,
-                course=course,
-                student=student,
-                program_outcome=po,
-                defaults={'satisfaction': 1}
-            )
-    
-    messages.success(request, 'File successfuly uploaded and processed.')
 
 
 def populate_program_outcomes(request):

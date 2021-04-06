@@ -27,22 +27,34 @@
                 {{ p_form|crispy }}
             </fieldset>
             <div class="form-group">
-                <button class="btn btn-primary" type="submit">Update Profile</button>
+                <button class="btn btn-outline-primary btn-sm" type="submit">Update Profile</button>
             </div>
         </form>
-        {% if user.is_superuser %}
+        {% if user.is_staff %}
             <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-students' %}">
                 {% csrf_token %}
                 <fieldset class="form-group">
-                    <legend class="border-bottom  mb-4">Update Student Information</legend>
+                    <legend class="border-bottom mb-4">Update Student Information</legend>
                     {{ stu_bulk_form|crispy }}
                 </fieldset>
                 <div class="form-group">
-                    <button class="btn btn-primary" type="submit">Update Students</button>
+                    <button class="btn btn-outline-primary btn-sm" type="submit">Update Students</button>
                 </div>
             </form>
+            <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-excempt-students' %}">
+                {% csrf_token %}
+                <fieldset class="form-group">
+                    <legend class="border-bottom mb-4">Upload Excempt Students' Grades</legend>
+                    {{ stu_bulk_form|crispy }}
+                </fieldset>
+                <div class="form-group">
+                    <button class="btn btn-outline-primary btn-sm" type="submit">Update Excempt Students</button>
+                </div>
+            </form>
+        {% endif %}
+        {% if user.is_superuser %}
             <h4 class="border-bottom  mb-4">Maintenance</h4>
-            <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a> | <a href="{% url 'toggle-registrations' %}">Toggle Registrations ({{ reg_status }})</a></p>
+            <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a> | <a href="{% url 'toggle-registrations' %}">Toggle Registrations ({{ reg_status }})</a> | <a href="{% url 'test-server-error' %}">Test Server Error</a></p>
         {% endif %}
     </div>
 </div>
