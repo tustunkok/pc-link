@@ -54,7 +54,19 @@
         {% endif %}
         {% if user.is_superuser %}
             <h4 class="border-bottom  mb-4">Maintenance</h4>
-            <p><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a> | <a href="{% url 'toggle-registrations' %}">Toggle Registrations ({{ reg_status }})</a> | <a href="{% url 'test-server-error' %}">Test Server Error</a></p>
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <td><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a></td>
+                        <td><a href="{% url 'toggle-registrations' %}">Toggle Registrations ({{ reg_status }})</a></td>
+                        <td><a href="{% url 'test-server-error' %}">Test Server Error</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="{% url 'pc-calc:dump-database' %}">Create Backup Snapshot</a></td>
+                        <td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
         {% endif %}
     </div>
 </div>

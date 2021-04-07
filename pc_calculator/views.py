@@ -20,11 +20,12 @@ from django.contrib import messages
 from django.views import generic
 from django.urls import reverse_lazy
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core import mail
 from django.conf import settings
+from django.core.management import call_command
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -40,6 +41,7 @@ from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 
+from zipfile import ZipFile, ZIP_DEFLATED
 from itertools import chain
 import pandas as pd
 import datetime
@@ -429,3 +431,24 @@ def recalculate_all_pos(request):
     
     messages.success(request, 'All student POs successfuly recalculated.')
     return redirect('profile')
+
+
+@login_required
+@user_passes_test(lambda user: user.is_superuser)
+def dump_database(request):
+    database_dump_buffer = io.StringIO()
+    call_command('dumpdata', stdout=database_dump_buffer)
+    database_dump_buffer.seek(0)
+
+    zip_buffer = io.BytesIO()
+    path = settings.BASE_DIR / 'media' / 'uploads'
+    with ZipFile(zip_buffer, 'w', ZIP_DEFLATED) as zip_f:
+        zip_f.writestr('database_dump.json', database_dump_buffer.read())
+        for root, dirs, filenames in os.walk(path):
+            for filename in filenames:
+                zip_f.write(os.path.join(root, filename), os.path.relpath(os.path.join(root, filename), os.path.join(path, '..')))
+    zip_buffer.seek(0)
+
+    response = HttpResponse(zip_buffer.read(), content_type='application/zip')
+    response["Content-Disposition"] = 'attachment; filename="backup.zip"'
+    return response

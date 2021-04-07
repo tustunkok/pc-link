@@ -41,6 +41,7 @@ urlpatterns = [
     path('upload/students/', views.populate_students, name='update-students'),
     path('upload/excempt-students/', views.handle_excempt_students, name='update-excempt-students'),
     path('recalculate-all-pos/', views.recalculate_all_pos, name='recalculate-all-pos'),
+    path('dump-database/', views.dump_database, name='dump-database'),
     # path('upload/program-outcomes/', utils.populate_program_outcomes),
     # path('upload/courses/', utils.populate_courses),
 ]
