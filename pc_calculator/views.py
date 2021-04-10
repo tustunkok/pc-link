@@ -452,3 +452,19 @@ def dump_database(request):
     response = HttpResponse(zip_buffer.read(), content_type='application/zip')
     response["Content-Disposition"] = 'attachment; filename="backup.zip"'
     return response
+
+
+def page_not_found(request, *args, **kwargs):
+    return render(request, '404.html')
+
+
+def server_error(request, *args, **kwargs):
+    return render(request, '500.html')
+
+
+def permission_denied(request, *args, **kwargs):
+    return render(request, '403.html')
+
+
+def bad_request(request, *args, **kwargs):
+    return render(request, '400.html')
