@@ -13,7 +13,8 @@
             <div class="card border-danger text-center mx-auto" style="max-width: 18rem;">
                 <div class="card-body text-danger">
                 <h5 class="card-title">Danger Zone</h5>
-                <p class="card-text"><a class="btn btn-danger" href="{% url 'pc-calc:recalculate-all-pos' %}">Rebuild PO Results Table</a></p>
+                <p class="card-text"><a class="btn btn-danger" onclick="return confirm('This process will take minutes to complete. Do you want to continue?')" href="{% url 'pc-calc:recalculate-all-pos' %}">Rebuild PO Results Table</a></p>
+                <p class="card-text"><a class="btn btn-danger" onclick="return confirm('This process will remove duplicate records from the database. Do you want to continue?')" href="{% url 'pc-calc:remove-duplicates' %}">Remove Duplicate PO Results</a></p>
                 </div>
             </div>
         {% endif %}
@@ -63,7 +64,8 @@
                     </tr>
                     <tr>
                         <td><a href="{% url 'pc-calc:dump-database' %}">Create Backup Snapshot</a></td>
-                        <td></td><td></td>
+                        <td><a onclick="alert('Not implemented.')" href="#">Restore From Snapshot</a></td>
+                        <td></td>
                     </tr>
                 </tbody>
             </table>

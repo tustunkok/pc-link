@@ -260,3 +260,54 @@ class ExportViewTest(TestCase):
         shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Fall' / 'user_testuser', ignore_errors=True)
         super().tearDownClass()
 
+
+class DBManagementTest(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        user = User.objects.create_user('testuser', 'test@example.com', '123456a.')
+        user.is_superuser = True
+        user.save()
+
+        students = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'students.csv')
+        Student.objects.bulk_create(Student(name=row[1], no=row[0], transfer_student=True if not pd.isna(row[2]) else False, double_major_student=True if not pd.isna(row[3]) else False, graduated_on=row[4] if not pd.isna(row[4]) else None) for _, row in students.iterrows())
+
+        program_outcomes = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'program-outcomes.csv')
+        ProgramOutcome.objects.bulk_create(ProgramOutcome(code=row[0], description=row[1]) for _, row in program_outcomes.iterrows())
+
+        courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'courses.csv')
+        Course.objects.bulk_create(Course(code=row[0], name=row[1]) for _, row in courses.iterrows())
+
+        po_courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'program-outcomes-courses.csv')
+        for _, row in po_courses.iterrows():
+            rel_pos = ProgramOutcome.objects.filter(code__in=row[1].split('-'))
+            Course.objects.get(code=row[0]).program_outcomes.add(*rel_pos)
+        
+        semesters = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'semesters.csv')
+        Semester.objects.bulk_create(Semester(year_interval=row[0], period_name=row[1], active=True) for _, row in semesters.iterrows())
+    
+    def setUp(self):
+        self.client.login(username='testuser', password='123456a.')
+    
+    def test_remove_duplicate_po_results(self):
+        """
+        Remove Duplicate PO Results button should find and remove duplicate records.
+        """
+        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_correct.csv', 'rb') as fp:
+            self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
+        
+        ProgramOutcomeResult.objects.create(semester=Semester.objects.get(pk=3), course=Course.objects.get(code='CMPE113'), student=Student.objects.get(no='44629785700'), program_outcome=ProgramOutcome.objects.get(code='PÇ13'), satisfaction=1)
+        
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), ['[44629785700:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[44629785700:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[21098683261:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[17763516392:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[62475310697:CMPE113:PÇ13:[2020-2021:Fall]:0]', '[54296286776:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[12031872585:CMPE113:PÇ13:[2020-2021:Fall]:1]'], ordered=False)
+
+        response = self.client.get(reverse('pc-calc:remove-duplicates'), follow=True)
+        
+        self.assertContains(response, '1 duplicate(s) is/are removed.')
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), ['[44629785700:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[21098683261:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[17763516392:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[62475310697:CMPE113:PÇ13:[2020-2021:Fall]:0]', '[54296286776:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[12031872585:CMPE113:PÇ13:[2020-2021:Fall]:1]'], ordered=False)
+    
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2020-2021 Fall' / 'user_testuser', ignore_errors=True)
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Spring' / 'user_testuser', ignore_errors=True)
+        shutil.rmtree(settings.MEDIA_ROOT / 'uploads' / '2019-2020 Fall' / 'user_testuser', ignore_errors=True)
+        super().tearDownClass()

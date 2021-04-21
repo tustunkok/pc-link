@@ -93,7 +93,7 @@ class ProgramOutcomeForm(forms.Form):
             )
         
         # Check if the lines containing Us are correct.
-        correct_U_lines = self.data_df.iloc[:, 2:].apply(lambda x: all(x.values == 'U') if 'U' in x.values else True, axis=1)
+        correct_U_lines = self.data_df.iloc[:, 2:].apply(lambda x: np.all(x.values == 'U') if x.isin(['U']).any() else True, axis=1)
         if not correct_U_lines.all():
             wrong_lines = ", ".join((np.nonzero(correct_U_lines.values == False)[0] + 2).astype(str).tolist())
             logger.info(f'Line(s) {wrong_lines} of the uploaded file is wrong.')

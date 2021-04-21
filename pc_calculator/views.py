@@ -26,6 +26,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core import mail
 from django.conf import settings
 from django.core.management import call_command
+from django.db.models import Count, Max
 
 from rest_framework import mixins
 from rest_framework import generics
@@ -273,7 +274,7 @@ def export(request):
     report_df.iloc[-4, :] = report_df.iloc[:-4, :].apply(lambda x: x.count(), axis=0) # Total Number of Assessed Students
     report_df.iloc[-3, :] = report_df.iloc[:-4, :].apply(lambda x: x.sum(), axis=0) # Number of Successful Students
     report_df.iloc[-2, :] = report_df.iloc[:-4, :].apply(lambda x: x.mean(), axis=0) # Successful Student Percantage
-    report_df.iloc[-1, :] = report_df.iloc[:-4, :].apply(lambda x: (x.count() - x.sum()) / x.count(), axis=0) # Unsuccessful Student Percantage
+    report_df.iloc[-1, :] = report_df.iloc[:-4, :].apply(lambda x: (x.count() - x.sum()) / x.count() if x.count() > 0 else -1, axis=0) # Unsuccessful Student Percantage
     
     report_df.apply(calculate_avgs, axis=1)
 
@@ -453,6 +454,20 @@ def dump_database(request):
     response["Content-Disposition"] = 'attachment; filename="backup.zip"'
     return response
 
+
+@login_required
+@user_passes_test(lambda user: user.is_superuser)
+def remove_duplicates(request):
+    unique_fields = ['student', 'course', 'program_outcome', 'semester']
+    duplicates = ProgramOutcomeResult.objects.values(*unique_fields).order_by().annotate(max_id=Max('id'), count_id=Count('id')).filter(count_id__gt=1)
+    
+    for duplicate in duplicates:
+        logger.debug(f'Removed duplicate record: {duplicate}')
+        ProgramOutcomeResult.objects.filter(**{x: duplicate[x] for x in unique_fields}).exclude(id=duplicate['max_id']).delete()
+    
+    messages.success(request, f'{len(duplicates)} duplicate(s) is/are removed.')
+
+    return redirect('profile')
 
 def page_not_found(request, *args, **kwargs):
     return render(request, '404.html')
