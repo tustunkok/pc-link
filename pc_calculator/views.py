@@ -28,14 +28,8 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db.models import Count, Max
 
-from rest_framework import mixins
 from rest_framework import generics
-from rest_framework import permissions
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-
-from django_filters.views import FilterView
 
 from pc_calculator.models import *
 from pc_calculator.serializers import *
@@ -47,8 +41,6 @@ from itertools import chain
 import pandas as pd
 import datetime
 import logging
-import glob
-import csv
 import io
 import os
 
@@ -176,8 +168,9 @@ def upload_program_outcome_file(request):
 
         if upload_result[0]:
             messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
-            mail.send_mail(
-                f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
+            if settings.DEBUG == False:
+                mail.send_mail(
+                    f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
 f'''
 The following file has been SUBMITTED.
 ======================================================================
@@ -187,10 +180,10 @@ Number of Processed Students: {upload_result[1]}
 Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
 ======================================================================
 ''',
-                'pc-link@atilim.edu.tr',
-                [request.user.email],
-                fail_silently=False
-            )
+                    'pc-link@atilim.edu.tr',
+                    [request.user.email],
+                    fail_silently=False
+                )
             logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
         else:
             messages.warning(request, 'No student from the department exists in the uploaded file.')
@@ -319,12 +312,12 @@ def export_diff(request):
     columns = pd.MultiIndex.from_tuples(tuples)
 
     first_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
-    for por in ProgramOutcomeResult.objects.filter(semester__in=first_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=first_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         first_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     first_semesters_df.apply(calculate_avgs, axis=1)
 
     second_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
-    for por in ProgramOutcomeResult.objects.filter(semester__in=second_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=second_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         second_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     second_semesters_df.apply(calculate_avgs, axis=1)
 
@@ -334,6 +327,10 @@ def export_diff(request):
     first_semesters_report_df.columns = first_semesters_report_df.columns.droplevel(1)
     second_semesters_report_df.columns = second_semesters_report_df.columns.droplevel(1)
 
+    if first_semesters_report_df.equals(second_semesters_report_df):
+        messages.warning(request, 'No difference between the chosen semester groups has been detected.')
+        return redirect('pc-calc:report')
+    
     report_df = first_semesters_report_df.compare(second_semesters_report_df, align_axis=0)
     fs_name = get_object_or_404(Semester, pk=first_semesters[-1])
     ss_name = get_object_or_404(Semester, pk=second_semesters[-1])
@@ -453,6 +450,17 @@ def dump_database(request):
     response = HttpResponse(zip_buffer.read(), content_type='application/zip')
     response["Content-Disposition"] = 'attachment; filename="backup.zip"'
     return response
+
+@login_required
+@user_passes_test(lambda user: user.is_superuser)
+def restore_pclink(request):
+    if request.method == 'POST':
+        snapshot_form = RestoreBackupForm(request.POST, request.FILES)
+
+        if snapshot_form.is_valid():
+            return HttpResponse("Under maintenance.")
+        else:
+            return HttpResponse("Under maintenance.")
 
 
 @login_required

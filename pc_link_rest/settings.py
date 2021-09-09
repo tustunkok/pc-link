@@ -66,7 +66,7 @@ INSTALLED_APPS = [
     'fontawesome-free',
     'coverage',
     'django_extensions',
-    'pc_calculator',
+    'pc_calculator.apps.PcCalculatorConfig',
     'accounts.apps.AccountsConfig',
 ]
 
@@ -218,9 +218,14 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file', 'mail_admins'],
+            'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
         },
         'pc_link_custom_logger': {
             'handlers': ['file'],

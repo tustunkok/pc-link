@@ -15,6 +15,7 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+from os import name
 from django.urls import path
 from rest_framework.urlpatterns import format_suffix_patterns
 from pc_calculator import views, utils
@@ -42,6 +43,7 @@ urlpatterns = [
     path('upload/excempt-students/', views.handle_excempt_students, name='update-excempt-students'),
     path('recalculate-all-pos/', views.recalculate_all_pos, name='recalculate-all-pos'),
     path('dump-database/', views.dump_database, name='dump-database'),
+    path('restore-pclink/', views.restore_pclink, name='restore-pclink'),
     path('remove-duplicates/', views.remove_duplicates, name='remove-duplicates')
     # path('upload/program-outcomes/', utils.populate_program_outcomes),
     # path('upload/courses/', utils.populate_courses),

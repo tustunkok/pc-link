@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.shortcuts import get_object_or_404
 import pandas as pd
 import numpy as np
@@ -161,3 +162,6 @@ class ExportDiffReportForm(forms.Form):
     first_semesters = forms.MultipleChoiceField(choices=get_all_semesters, label='Choose the first group of semesters that you want to compare:')
     second_semesters = forms.MultipleChoiceField(choices=get_all_semesters, label='Choose the second group of semesters that you want to compare:')
 
+
+class RestoreBackupForm(forms.Form):
+    snapshot_file = forms.FileField(label="Snapshot File:", validators=[FileExtensionValidator(allowed_extensions=['zip'])])
