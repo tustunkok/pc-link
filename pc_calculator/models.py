@@ -54,6 +54,7 @@ class Course(models.Model):
     code = models.CharField(max_length=9)
     name = models.CharField(max_length=120)
     program_outcomes = models.ManyToManyField(ProgramOutcome)
+    active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.code

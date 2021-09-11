@@ -361,7 +361,7 @@ def course_report(request):
     semester = get_object_or_404(Semester, pk=semester_id)
     uploaded_courses_set = set(chain.from_iterable(ProgramOutcomeFile.objects.filter(semester=semester).values_list('course')))
 
-    return render(request, 'pc_calculator/upload_status.html', {'semester': semester, 'courses': Course.objects.all(), 'ucourses_ids': uploaded_courses_set})
+    return render(request, 'pc_calculator/upload_status.html', {'semester': semester, 'courses': Course.objects.filter(active=True), 'ucourses_ids': uploaded_courses_set})
 
 
 @login_required
