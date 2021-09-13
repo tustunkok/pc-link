@@ -4,6 +4,7 @@ from django.test import Client
 from django.urls import reverse
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils.timezone import activate
 from pc_calculator.models import *
 from pc_calculator.forms import *
 import pandas as pd
@@ -24,7 +25,7 @@ class LoggedInUploadViewTest(TestCase):
         ProgramOutcome.objects.bulk_create(ProgramOutcome(code=row[0], description=row[1]) for _, row in program_outcomes.iterrows())
 
         courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'courses.csv')
-        Course.objects.bulk_create(Course(code=row[0], name=row[1]) for _, row in courses.iterrows())
+        Course.objects.bulk_create(Course(code=row[0], name=row[1], active=True) for _, row in courses.iterrows())
 
         po_courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'program-outcomes-courses.csv')
         for _, row in po_courses.iterrows():
@@ -208,7 +209,7 @@ class ExportViewTest(TestCase):
         ProgramOutcome.objects.bulk_create(ProgramOutcome(code=row[0], description=row[1]) for _, row in program_outcomes.iterrows())
 
         courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'courses.csv')
-        Course.objects.bulk_create(Course(code=row[0], name=row[1]) for _, row in courses.iterrows())
+        Course.objects.bulk_create(Course(code=row[0], name=row[1], active=True) for _, row in courses.iterrows())
 
         po_courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'program-outcomes-courses.csv')
         for _, row in po_courses.iterrows():
@@ -276,7 +277,7 @@ class DBManagementTest(TestCase):
         ProgramOutcome.objects.bulk_create(ProgramOutcome(code=row[0], description=row[1]) for _, row in program_outcomes.iterrows())
 
         courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'courses.csv')
-        Course.objects.bulk_create(Course(code=row[0], name=row[1]) for _, row in courses.iterrows())
+        Course.objects.bulk_create(Course(code=row[0], name=row[1], active=True) for _, row in courses.iterrows())
 
         po_courses = pd.read_csv(settings.BASE_DIR / 'test-documents' / 'program-outcomes-courses.csv')
         for _, row in po_courses.iterrows():

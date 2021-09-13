@@ -15,20 +15,12 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import os
-import io
 import csv
 import logging
-import datetime
 import pandas as pd
-import numpy as np
 
 from pc_calculator.models import *
 from django.shortcuts import get_object_or_404, redirect
-from django.core.files import File
-from django.contrib import messages
-from django.conf import settings
-from django.http import HttpResponse
 
 logger = logging.getLogger('pc_link_custom_logger')
 

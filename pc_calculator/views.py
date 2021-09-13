@@ -244,6 +244,8 @@ def calculate_avgs(row):
 
 @login_required
 def export(request):
+    """Exports the user uploaded entries filtered by the given parameters."""
+
     logger.info(f'Export requested by {request.user}.')
     export_report_form = ExportReportForm(request.POST)
 
