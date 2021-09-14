@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'fontawesome-free',
     'coverage',
     'django_extensions',
+    'dbbackup',
     'pc_calculator.apps.PcCalculatorConfig',
     'accounts.apps.AccountsConfig',
 ]
@@ -179,6 +180,12 @@ with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:
     EMAIL_HOST_PASSWORD = f.readline().strip()
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = 'pc-link@atilim.edu.tr'
+
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': BASE_DIR / 'backups'}
+DBBACKUP_CLEANUP_KEEP = 1
+DBBACKUP_CLEANUP_KEEP_MEDIA = 1
+#DBBACKUP_GPG_RECIPIENT = ''
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'

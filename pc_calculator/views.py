@@ -19,7 +19,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.views import generic
 from django.urls import reverse_lazy
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -27,6 +27,7 @@ from django.core import mail
 from django.conf import settings
 from django.core.management import call_command
 from django.db.models import Count, Max
+from maintenance_mode.core import set_maintenance_mode
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -36,11 +37,11 @@ from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
 
-from zipfile import ZipFile, ZIP_DEFLATED
 from itertools import chain
 import pandas as pd
 import datetime
 import logging
+import shutil
 import io
 import os
 
@@ -436,33 +437,34 @@ def recalculate_all_pos(request):
 @login_required
 @user_passes_test(lambda user: user.is_superuser)
 def dump_database(request):
-    database_dump_buffer = io.StringIO()
-    call_command('dumpdata', stdout=database_dump_buffer)
-    database_dump_buffer.seek(0)
+    set_maintenance_mode(True)
+    call_command('dbbackup', '--compress', '--clean', interactive=False)
+    call_command('mediabackup', '--compress', '--clean', interactive=False)
+    shutil.make_archive('/tmp/backup', 'zip', settings.BASE_DIR / 'backups')
 
-    zip_buffer = io.BytesIO()
-    path = settings.BASE_DIR / 'media' / 'uploads'
-    with ZipFile(zip_buffer, 'w', ZIP_DEFLATED) as zip_f:
-        zip_f.writestr('database_dump.json', database_dump_buffer.read())
-        for root, dirs, filenames in os.walk(path):
-            for filename in filenames:
-                zip_f.write(os.path.join(root, filename), os.path.relpath(os.path.join(root, filename), os.path.join(path, '..')))
-    zip_buffer.seek(0)
-
-    response = HttpResponse(zip_buffer.read(), content_type='application/zip')
-    response["Content-Disposition"] = 'attachment; filename="backup.zip"'
+    response = FileResponse(open('/tmp/backup.zip', 'rb'), as_attachment=True)
+    # response["Content-Disposition"] = 'attachment; filename="backup.zip"'
+    set_maintenance_mode(False)
     return response
 
 @login_required
 @user_passes_test(lambda user: user.is_superuser)
 def restore_pclink(request):
     if request.method == 'POST':
+        set_maintenance_mode(True)
         snapshot_form = RestoreBackupForm(request.POST, request.FILES)
 
         if snapshot_form.is_valid():
-            return HttpResponse("Under maintenance.")
-        else:
-            return HttpResponse("Under maintenance.")
+            with open('/tmp/backup.zip', 'wb') as backup_f:
+                backup_f.write(snapshot_form.cleaned_data['snapshot_file'].read())
+            shutil.rmtree(settings.BASE_DIR / 'backups', ignore_errors=True)
+            shutil.unpack_archive('/tmp/backup.zip', settings.BASE_DIR / 'backups', 'zip')
+            call_command('dbrestore', '--uncompress', interactive=False)
+            call_command('dbrestore', '--uncompress', interactive=False)
+            call_command('mediarestore', '--uncompress', interactive=False)
+        set_maintenance_mode(False)
+        messages.info(request, 'Database and media files are restored.')
+    return redirect('profile')
 
 
 @login_required
