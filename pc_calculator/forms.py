@@ -123,7 +123,7 @@ class ProgramOutcomeForm(forms.Form):
         # Check if the program outcomes of the uploaded file matches with the actual program outcomes of the file.
         if hasattr(self, 'data_df'):
             course = get_object_or_404(Course, code=cleaned_data.get('course'))
-            file_pos = set(self.data_df.columns[2:])
+            file_pos = set([x.strip() for x in self.data_df.columns[2:]])
             uploaded_course_pos = set([x.code for x in course.program_outcomes.all()])
             if file_pos != uploaded_course_pos:
                 logger.info(f'[User: {self.user}] - The program outcomes in the uploaded file do not match the program outcomes of the registered course for course {course}.')

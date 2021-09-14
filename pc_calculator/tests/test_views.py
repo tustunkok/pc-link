@@ -144,6 +144,17 @@ class LoggedInUploadViewTest(TestCase):
         self.assertContains(response, 'The headers of the file should be student_id, name, and exact PÇ codes.')
         self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), [], ordered=False)
     
+    def test_correct_spaced_column_names(self):
+        """
+        Upload page should accept the spaced csv column names.
+        """
+
+        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_spaced_column_name.csv', 'rb') as fp:
+            response = self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 3, 'outcome_file': fp})
+        
+        self.assertContains(response, 'successfuly uploaded')
+        self.assertQuerysetEqual(ProgramOutcomeResult.objects.all(), ['[44629785700:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[21098683261:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[17763516392:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[62475310697:CMPE113:PÇ13:[2020-2021:Fall]:0]', '[54296286776:CMPE113:PÇ13:[2020-2021:Fall]:1]', '[12031872585:CMPE113:PÇ13:[2020-2021:Fall]:1]'], ordered=False)
+    
     def test_non_u_all(self):
         """
         Upload page should reject the csv files with lines that does not have U in all columns.
