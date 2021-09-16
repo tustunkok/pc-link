@@ -34,6 +34,7 @@ class Semester(models.Model):
     period_name = models.CharField(max_length=6)
     period_order_value = models.IntegerField(default=1)
     active = models.BooleanField(default=False)
+    offered_courses = models.ManyToManyField('Course')
 
     def __str__(self):
         return self.year_interval + " " + self.period_name
@@ -54,7 +55,6 @@ class Course(models.Model):
     code = models.CharField(max_length=9)
     name = models.CharField(max_length=120)
     program_outcomes = models.ManyToManyField(ProgramOutcome)
-    active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.code
