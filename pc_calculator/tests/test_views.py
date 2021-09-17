@@ -246,7 +246,7 @@ class ExportViewTest(TestCase):
         downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
 
         self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'CMPE113')][0], 1.0)
-        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'AVG')][0], 'IN')
+        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'PÇ13 AVG')][0], 'IN')
     
     def test_multiple_semester_same_course_entered_csv_majority_zero_report(self):
         with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_correct.csv', 'rb') as fp:
@@ -263,7 +263,7 @@ class ExportViewTest(TestCase):
         downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
 
         self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'SE493')][0], 1.0)
-        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'AVG')][0], 1.0)
+        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'PÇ11b AVG')][0], 1.0)
     
     @classmethod
     def tearDownClass(cls):

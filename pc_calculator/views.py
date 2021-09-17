@@ -27,6 +27,7 @@ from django.core import mail
 from django.conf import settings
 from django.core.management import call_command
 from django.db.models import Count, Max
+from django.core.paginator import Paginator
 from maintenance_mode.core import set_maintenance_mode
 
 from rest_framework import generics
@@ -148,11 +149,35 @@ class ProgramOutcomeFileDeleteOnlyFileView(LoginRequiredMixin, generic.DeleteVie
 def report_view(request):
     export_report_form = ExportReportForm()
     export_diff_report_form = ExportDiffReportForm()
-    return render(request, 'pc_calculator/report.html', {'export_form': export_report_form, 'export_diff_form': export_diff_report_form})
+    return render(
+        request,
+        'pc_calculator/report.html',
+        {'export_form': export_report_form,
+        'export_diff_form': export_diff_report_form}
+    )
 
 
-def help(request):
-    return render(request, 'pc_calculator/help.html')
+def changelog(request):
+    with open(settings.BASE_DIR / 'git-commit-history.log', 'r') as commit_hist_f:
+        raw_log_entries = commit_hist_f.readlines()
+    
+    commits = list()
+    for row in raw_log_entries:
+        commit_info = row[row.find('[') + 1:row.find(']')].split(' - ')
+        commit = {
+            'date': commit_info[0],
+            'author': commit_info[1],
+            'commit_id': commit_info[2],
+            'commit_link': f'https://github.com/tustunkok/pc-link/commit/{commit_info[2]}',
+            'commit_message': row.split('] ')[1]
+        }
+        commits.append(commit)
+
+    paginator = Paginator(commits, 10) # Show 25 contacts per page.
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'pc_calculator/change_log.html', {'page_obj': page_obj})
 
 
 @login_required
@@ -235,11 +260,17 @@ def handle_excempt_students(request):
 def calculate_avgs(row):
     for idx in set(list(zip(*row.index))[0]):
         if row[idx].isna().sum() == len(row[idx]):
-            row[idx, "AVG"] = 'NA'
+            row[idx, f"{idx} AVG"] = 'NA'
         elif (row[idx].isna().sum() - 1) <= len(row[idx]) / 2:
-            row[idx, "AVG"] = 0 if row[idx].mean() < 0.5 else 1
+            row[idx, f"{idx} AVG"] = 0 if row[idx].mean() < 0.5 else 1
         else:
-            row[idx, "AVG"] = 'IN'
+            row[idx, f"{idx} AVG"] = 'IN'
+    return row
+
+
+def calculate_unsats(row):
+    for idx in set(list(zip(*row.index))[0]):
+        row[idx, f"{idx} #UNSAT"] = (row[idx] == 0).sum()
     return row
 
 
@@ -259,7 +290,7 @@ def export(request):
 
     tuples = list()
     for po in ProgramOutcome.objects.all():
-        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
+        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
     columns = pd.MultiIndex.from_tuples(tuples)
 
     report_df = pd.DataFrame(index=map(list, zip(*list(Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name')) + [('Analysis', 'Total Number of Assessed Students'), ('Analysis', 'Number of Successful Students'), ('Analysis', 'Successful Student Percantage'), ('Analysis', 'Unsuccessful Student Percantage')])), columns=columns)
@@ -273,6 +304,7 @@ def export(request):
     report_df.iloc[-1, :] = report_df.iloc[:-4, :].apply(lambda x: (x.count() - x.sum()) / x.count() if x.count() > 0 else -1, axis=0) # Unsuccessful Student Percantage
     
     report_df.apply(calculate_avgs, axis=1)
+    report_df.apply(calculate_unsats, axis=1)
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
