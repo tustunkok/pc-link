@@ -37,7 +37,7 @@ def get_all_semesters():
     return [(semester.pk, f"{semester.year_interval} {semester.period_name}") for semester in Semester.objects.all().order_by('period_order_value')]
 
 def get_courses():
-    return [(course.code, f"{course.code} - {course.name}") for course in Course.objects.order_by("code")]
+    return [('', 'PLEASE SELECT A COURSE')] + [(course.code, f"{course.code} - {course.name}") for course in Course.objects.order_by("code")]
 
 
 class ProgramOutcomeForm(forms.Form):
