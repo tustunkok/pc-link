@@ -303,8 +303,8 @@ def export(request):
     report_df.iloc[-2, :] = report_df.iloc[:-4, :].apply(lambda x: x.mean(), axis=0) # Successful Student Percantage
     report_df.iloc[-1, :] = report_df.iloc[:-4, :].apply(lambda x: (x.count() - x.sum()) / x.count() if x.count() > 0 else -1, axis=0) # Unsuccessful Student Percantage
     
-    report_df.apply(calculate_avgs, axis=1)
-    report_df.apply(calculate_unsats, axis=1)
+    report_df = report_df.apply(calculate_avgs, axis=1)
+    report_df = report_df.apply(calculate_unsats, axis=1)
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
