@@ -8,7 +8,6 @@ django-filter==2.4.0
 django-maintenance-mode==0.15.1
 djangorestframework==3.12.2
 et-xmlfile==1.0.1
-fontawesome-free==5.15.2
 jdcal==1.4.1
 numpy==1.20.1
 openpyxl==3.0.6

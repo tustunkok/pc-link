@@ -1,31 +1,46 @@
 <nav class="navbar navbar-light navbar-expand-md mb-3">
     <div class="container">
         <a class="navbar-brand" href="{% url 'pc-calc:home' %}">
-            <span style="font-size: 26px;">PÇ-Link</span> <span style="font-size: 12px;">by Department of Software Engineering</span>
+            <span style="font-size: 26px;">PÇ-Link</span> <span style="font-size: 12px;">by Department of Software
+                Engineering</span>
         </a><button data-toggle="collapse" class="navbar-toggler" data-target="#navcol-1"><span class="sr-only">Toggle
                 navigation</span><span class="navbar-toggler-icon"></span></button>
         <div class="collapse navbar-collapse" id="navcol-1">
             <ul class="nav navbar-nav text-left ml-auto">
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'pc-calc:upload' %}">Upload PO
+                {% url 'pc-calc:upload' as url %}
+                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
+                        class="nav-link" href="{% url 'pc-calc:upload' %}">Upload PO
                         File</a></li>
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'pc-calc:report' %}">Create
+
+                {% url 'pc-calc:report' as url %}
+                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
+                        class="nav-link" href="{% url 'pc-calc:report' %}">Create
                         Report</a>
                 </li>
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'pc-calc:manage' %}">Manage
+
+                {% url 'pc-calc:manage' as url %}
+                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
+                        class="nav-link" href="{% url 'pc-calc:manage' %}">Manage
                         Uploaded
                         Files</a></li>
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'pc-calc:changelog' %}">What's New?</a>
+
+                {% url 'pc-calc:changelog' as url %}
+                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
+                        class="nav-link" href="{% url 'pc-calc:changelog' %}">What's New?</a>
                 </li>
                 {% if user.is_authenticated %}
-                    <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'profile' %}">Profile</a></li>
-                    {% if user.is_superuser %}
-                        <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'admin:index' %}">Admin</a></li>
-                    {% endif %}
-                    <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+                {% url 'profile' as url %}
+                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
+                        class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+                {% if user.is_superuser %}
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+                </li>
+                {% endif %}
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
                 {% else %}
-                    <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                    <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'register' %}">Register</a>
-                    </li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'register' %}">Register</a>
+                </li>
                 {% endif %}
             </ul>
         </div>
