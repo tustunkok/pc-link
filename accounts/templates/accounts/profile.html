@@ -10,13 +10,17 @@
         <p class="text-secondary">{{ user.email }}</p>
         <p><a href="{% url 'reset-password' %}">Reset Password</a></p>
         {% if user.is_superuser %}
-            <div class="card border-danger text-center mx-auto" style="max-width: 18rem;">
-                <div class="card-body text-danger">
+        <div class="card border-danger text-center mx-auto" style="max-width: 18rem;">
+            <div class="card-body text-danger">
                 <h5 class="card-title">Danger Zone</h5>
-                <p class="card-text"><a class="btn btn-danger" onclick="return confirm('This process will take minutes to complete. Do you want to continue?')" href="{% url 'pc-calc:recalculate-all-pos' %}">Rebuild PO Results Table</a></p>
-                <p class="card-text"><a class="btn btn-danger" onclick="return confirm('This process will remove duplicate records from the database. Do you want to continue?')" href="{% url 'pc-calc:remove-duplicates' %}">Remove Duplicate PO Results</a></p>
-                </div>
+                <p class="card-text"><a class="btn btn-danger"
+                        onclick="return confirm('This process will take minutes to complete. Do you want to continue?')"
+                        href="{% url 'pc-calc:recalculate-all-pos' %}">Rebuild PO Results Table</a></p>
+                <p class="card-text"><a class="btn btn-danger"
+                        onclick="return confirm('This process will remove duplicate records from the database. Do you want to continue?')"
+                        href="{% url 'pc-calc:remove-duplicates' %}">Remove Duplicate PO Results</a></p>
             </div>
+        </div>
         {% endif %}
     </div>
     <div class="col-8">
@@ -32,51 +36,60 @@
             </div>
         </form>
         {% if user.is_staff %}
-            <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-students' %}">
-                {% csrf_token %}
-                <fieldset class="form-group">
-                    <legend class="border-bottom mb-4">Update Student Information</legend>
-                    {{ stu_bulk_form|crispy }}
-                </fieldset>
-                <div class="form-group">
-                    <button class="btn btn-outline-primary btn-sm" type="submit">Update Students</button>
-                </div>
-            </form>
-            <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-excempt-students' %}">
-                {% csrf_token %}
-                <fieldset class="form-group">
-                    <legend class="border-bottom mb-4">Upload Excempt Students' Grades</legend>
-                    {{ stu_bulk_form|crispy }}
-                </fieldset>
-                <div class="form-group">
-                    <button class="btn btn-outline-primary btn-sm" type="submit">Update Excempt Students</button>
-                </div>
-            </form>
+        <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-students' %}">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Update Student Information</legend>
+                {{ stu_bulk_form|crispy }}
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-primary btn-sm" type="submit">Update Students</button>
+            </div>
+        </form>
+        <form method="POST" enctype="multipart/form-data" action="{% url 'pc-calc:update-excempt-students' %}">
+            {% csrf_token %}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Upload Excempt Students' Grades</legend>
+                {{ stu_bulk_form|crispy }}
+            </fieldset>
+            <div class="form-group">
+                <button class="btn btn-outline-primary btn-sm" type="submit">Update Excempt Students</button>
+            </div>
+        </form>
         {% endif %}
         {% if user.is_superuser %}
-            <h4 class="border-bottom  mb-4">Maintenance</h4>
-            <table class="table table-bordered">
-                <tbody>
-                    <tr>
-                        <td><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a></td>
-                        <td><a href="{% url 'toggle-registrations' %}">Toggle Registrations ({{ reg_status }})</a></td>
-                        <td><a href="{% url 'test-server-error' %}">Test Server Error</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="{% url 'pc-calc:dump-database' %}">Create Backup Snapshot</a></td>
-                        <td><form method="POST" action="{% url 'pc-calc:restore-pclink' %}" enctype="multipart/form-data" id="snapshot-form">{% csrf_token %}{{ snapshot_form|crispy }}</form></td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
+        <h4 class="border-bottom  mb-4">Maintenance</h4>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td><a href="{% url 'maintenance_mode_on' %}">Set Maintenance Mode</a></td>
+                    <td>Toggle Registrations: <input id="toggle-reg" type="checkbox" {% if reg_status == True %}checked{% endif %} data-toggle="toggle" data-onstyle="success"></td>
+                    <td><a href="{% url 'test-server-error' %}">Test Server Error</a></td>
+                </tr>
+                <tr>
+                    <td><a href="{% url 'pc-calc:dump-database' %}">Create Backup Snapshot</a></td>
+                    <td>
+                        <form method="POST" action="{% url 'pc-calc:restore-pclink' %}" enctype="multipart/form-data"
+                            id="snapshot-form">{% csrf_token %}{{ snapshot_form|crispy }}</form>
+                    </td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
         {% endif %}
     </div>
 </div>
 
 <script>
-    document.getElementById("id_snapshot_file").onchange = function() {
+    document.getElementById("id_snapshot_file").onchange = function () {
         document.getElementById("snapshot-form").submit();
     };
+
+    $(function () {
+        $('#toggle-reg').change(function () {
+            $.ajax("{% url 'toggle-registrations' %}");
+        })
+    });
 </script>
 
 {% endblock %}
