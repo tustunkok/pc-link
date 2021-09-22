@@ -122,3 +122,44 @@ def populate_courses(request):
             course.save()
             course.program_outcomes.add(*[ProgramOutcome.objects.get(code=f'PÇ{po}') for po in row[2].split('-')])
     return redirect('/admin/pc_calculator/course/')
+
+
+def calculate_avgs(row):
+    for idx in set(list(zip(*row.index))[0]):
+        if row[idx].isna().sum() == len(row[idx]):
+            row[idx, f"{idx} AVG"] = 'NA'
+        elif (row[idx].isna().sum() - 1) <= len(row[idx]) / 2:
+            row[idx, f"{idx} AVG"] = 0 if row[idx].mean() < 0.5 else 1
+        else:
+            row[idx, f"{idx} AVG"] = 'IN'
+    return row
+
+
+def calculate_unsats(row):
+    for idx in set(list(zip(*row.index))[0]):
+        row[idx, f"{idx} #UNSAT"] = (row[idx] == 0).sum()
+    return row
+
+
+def export_work(semesters):    
+    logger.debug(f'Exporting for semesters: {semesters}')
+
+    tuples = list()
+    for po in ProgramOutcome.objects.all():
+        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
+    columns = pd.MultiIndex.from_tuples(tuples)
+
+    report_df = pd.DataFrame(index=map(list, zip(*list(Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name')) + [('Analysis', 'Total Number of Assessed Students'), ('Analysis', 'Number of Successful Students'), ('Analysis', 'Successful Student Percantage'), ('Analysis', 'Unsuccessful Student Percantage')])), columns=columns)
+
+    for por in ProgramOutcomeResult.objects.filter(semester__in=semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+        report_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
+
+    report_df.iloc[-4, :] = report_df.iloc[:-4, :].apply(lambda x: x.count(), axis=0) # Total Number of Assessed Students
+    report_df.iloc[-3, :] = report_df.iloc[:-4, :].apply(lambda x: x.sum(), axis=0) # Number of Successful Students
+    report_df.iloc[-2, :] = report_df.iloc[:-4, :].apply(lambda x: x.mean(), axis=0) # Successful Student Percantage
+    report_df.iloc[-1, :] = report_df.iloc[:-4, :].apply(lambda x: (x.count() - x.sum()) / x.count() if x.count() > 0 else -1, axis=0) # Unsuccessful Student Percantage
+    
+    report_df = report_df.apply(calculate_avgs, axis=1)
+    report_df = report_df.apply(calculate_unsats, axis=1)
+
+    return report_df
