@@ -1,8 +1,8 @@
-{% extends 'base.html' %}
+{% extends 'dashboard-base.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
+{% block page_title %}Manage Uploaded Files{% endblock %}
 {% block content %}
-
 <div class="row">
     <div class="col">
         <table class="table">
@@ -18,14 +18,17 @@
             </thead>
             <tbody>
                 {% for file in page_obj %}
-                    <tr>
-                        <td>{{ file.filename|truncatechars:30 }}</td>
-                        <td>{{ file.course }}</td>
-                        <td>{{ file.semester }}</td>
-                        <td>{{ file.user.username|truncatechars:15 }}</td>
-                        <td>{{ file.date_uploaded }}</td>
-                        <td><a href="{% url 'pc-calc:update' file.id %}"><i class="far fa-edit"></i></a> | <a href="{% url 'pc-calc:delete-file-only' file.id %}"><i class="fas fa-folder-minus"></i></a> | <a href="{% url 'pc-calc:delete' file.id %}"><i class="far fa-trash-alt"></i></a></td>
-                    </tr>
+                <tr>
+                    <td>{{ file.filename|truncatechars:30 }}</td>
+                    <td>{{ file.course }}</td>
+                    <td>{{ file.semester }}</td>
+                    <td>{{ file.user.username|truncatechars:15 }}</td>
+                    <td>{{ file.date_uploaded }}</td>
+                    <td><a href="{% url 'pc-calc:update' file.id %}"><i class="far fa-edit"></i></a> | <a
+                            href="{% url 'pc-calc:delete-file-only' file.id %}"><i
+                                class="fas fa-folder-minus"></i></a> | <a
+                            href="{% url 'pc-calc:delete' file.id %}"><i class="far fa-trash-alt"></i></a></td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -33,13 +36,14 @@
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
-                    <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.number|add:"-1" }}</a></li>
+                <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">{{ page_obj.number|add:"-1" }}</a></li>
                 {% endif %}
                 <li class="page-item active"><a class="page-link" href="#">{{ page_obj.number }}</a></li>
                 {% if page_obj.has_next %}
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.number|add:"1" }}</a></li>
-                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">{{ page_obj.number|add:"1" }}</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last
+                        &raquo;</a></li>
                 {% endif %}
             </ul>
         </nav>
@@ -53,7 +57,7 @@
                 <label>Show uploaded status of courses for the semester:&nbsp;</label>
                 <select class="form-control" name="semester">
                     {% for sem in semesters %}
-                        <option value="{{ sem.id }}">{{ sem }}</option>
+                    <option value="{{ sem.id }}">{{ sem }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -61,5 +65,4 @@
         </form>
     </div>
 </div>
-
 {% endblock %}

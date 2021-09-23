@@ -1,0 +1,78 @@
+<nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+    <div class="sidebar-sticky pt-3">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                {% url 'pc-calc:upload' as url %}
+                <a class="nav-link{% if request.path == url or request.path == '/' %} active{% endif %}" href="{% url 'pc-calc:upload' %}">
+                    <span data-feather="home"></span>
+                    Upload PO File <span class="sr-only">(current)</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                {% url 'pc-calc:report' as url %}
+                <a class="nav-link{% if request.path == url %} active{% endif %}" href="{% url 'pc-calc:report' %}">
+                    <span data-feather="bar-chart-2"></span>
+                    Reports
+                </a>
+            </li>
+            <li class="nav-item">
+                {% url 'pc-calc:manage' as url %}
+                <a class="nav-link{% if request.path == url %} active{% endif %}" href="{% url 'pc-calc:manage' %}">
+                    <span data-feather="file"></span>
+                    Manage Uploaded Files
+                </a>
+            </li>
+            <li class="nav-item">
+                {% url 'pc-calc:changelog' as url %}
+                <a class="nav-link{% if request.path == url %} active{% endif %}" href="{% url 'pc-calc:changelog' %}">
+                    <span data-feather="shopping-cart"></span>
+                    What's New?
+                </a>
+            </li>
+        </ul>
+
+        {% if user.is_authenticated %}
+        <h6
+            class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Admin Panel</span>
+        </h6>
+        <!--
+            {% if user.is_authenticated %}
+                {% url 'profile' as url %}
+                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
+                        class="nav-link" href="{% url 'profile' %}">Profile</a></li>
+                {% if user.is_superuser %}
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+                </li>
+                {% endif %}
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+                {% else %}
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'register' %}">Register</a>
+                </li>
+                {% endif %}
+        -->
+        <ul class="nav flex-column mb-2">
+            <li class="nav-item">
+                {% url 'profile' as url %}
+                <a class="nav-link{% if request.path == url %} active{% endif %}" href="{% url 'profile' %}">
+                    <span data-feather="file-text"></span>
+                    Profile
+                </a>
+            </li>
+            {% if user.is_superuser %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'admin:index' %}">
+                    <span data-feather="file-text"></span>
+                    Admin
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        {% endif %}
+        <h6
+            class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>v2.0.0-beta1</span>
+        </h6>
+    </div>
+</nav>

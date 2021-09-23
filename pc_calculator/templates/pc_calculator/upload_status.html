@@ -1,10 +1,12 @@
-{% extends 'base.html' %}
+{% extends 'dashboard-base.html' %}
+{% block page_title %}Upload Status{% endblock %}
 {% block content %}
 
 <div class="row">
     <div class="col">
         <h3>The Upload Status of Courses for Semester {{ semester }}</h3>
-        <table class="table">
+        <table id="dtDynamicVerticalScrollExample" class="table table-striped table-bordered table-sm"
+            cellspacing="0" width="100%">
             <thead>
                 <tr>
                     <th scope="col">No</th>
@@ -16,27 +18,37 @@
             </thead>
             <tbody>
                 {% for course in courses %}
-                    {% if course.id in ucourses_ids %}
-                        <tr class="table-success">
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ course.code }}</td>
-                            <td>{{ course.name }}</td>
-                            <td>{{ semester }}</td>
-                            <td>Uploaded</td>
-                        </tr>
-                    {% else %}
-                        <tr class="table-danger">
-                            <td>{{ forloop.counter }}</td>
-                            <td>{{ course.code }}</td>
-                            <td>{{ course.name }}</td>
-                            <td>{{ semester }}</td>
-                            <td>Not Uploaded</td>
-                        </tr>
-                    {% endif %}
+                {% if course.id in ucourses_ids %}
+                <tr class="table-success">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ course.code }}</td>
+                    <td>{{ course.name }}</td>
+                    <td>{{ semester }}</td>
+                    <td>Uploaded</td>
+                </tr>
+                {% else %}
+                <tr class="table-danger">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ course.code }}</td>
+                    <td>{{ course.name }}</td>
+                    <td>{{ semester }}</td>
+                    <td>Not Uploaded</td>
+                </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+    $(document).ready(function () {
+        $('#dtDynamicVerticalScrollExample').DataTable({
+            "scrollY": "50vh",
+            "scrollCollapse": true,
+        });
+        $('.dataTables_length').addClass('bs-select');
+    });
+</script>
 
 {% endblock %}
