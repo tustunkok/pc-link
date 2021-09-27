@@ -28,6 +28,8 @@ urlpatterns = [
     path('api/program-outcomes/', views.ProgramOutcomeList.as_view(), name='api-po'),
 
     path('report/', views.report_view, name='report'),
+    path('report/progress/<uuid>/', views.get_task_progress, name='task-progress'),
+    path('report/download/<uuid>/<str:file_type>/', views.get_task_data, name='task-data'),
     path('upload/', views.upload_program_outcome_file, name='upload'),
     path('', views.upload_program_outcome_file, name='home'),
     path('export/', views.export, name='export'),

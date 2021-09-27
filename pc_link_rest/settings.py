@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'coverage',
     'django_extensions',
     'dbbackup',
+    'django_celery_results',
     'pc_calculator.apps.PcCalculatorConfig',
     'accounts.apps.AccountsConfig',
 ]
@@ -184,6 +185,12 @@ DBBACKUP_STORAGE_OPTIONS = {'location': BASE_DIR / 'backups'}
 DBBACKUP_CLEANUP_KEEP = 1
 DBBACKUP_CLEANUP_KEEP_MEDIA = 1
 #DBBACKUP_GPG_RECIPIENT = ''
+
+CELERY_RESULT_BACKEND = 'django-db'
+# CELERY_TASK_SERIALIZER = 'pickle'
+CELERY_RESULT_SERIALIZER = 'pickle'
+CELERY_ACCEPT_CONTENT = ['application/x-python-serialize']
+# CELERY_RESULT_ACCEPT_CONTENT = ['pickle']
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'

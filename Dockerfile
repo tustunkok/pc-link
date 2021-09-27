@@ -15,9 +15,13 @@ RUN apt-get update && apt-get install -y \
     graphviz \
     libgraphviz-dev \
     nano \
+    curl \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . /pc_link_rest/
+
+RUN bash /pc_link_rest/rabbitmq-install-script.sh
 
 RUN chmod a+x /pc_link_rest/start.sh && mkdir /pc_link_rest/persist/
 RUN pip install --no-cache-dir -r /pc_link_rest/requirements.txt
@@ -31,5 +35,5 @@ RUN groupadd -g $PC_GID $PC_USER && \
 
 WORKDIR /pc_link_rest/
 
-USER $PC_USER
+# USER $PC_USER
 CMD /bin/sh start.sh

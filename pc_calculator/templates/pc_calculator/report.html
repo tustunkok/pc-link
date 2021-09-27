@@ -8,11 +8,16 @@
     <div class="col border rounded p-3 m-2">
         <h5>Export Report</h5>
         <hr>
-        <form action="{% url 'pc-calc:export' %}" method="POST">
+        <form id="exportForm" method="POST">
             {% csrf_token %}
             {{ export_form|crispy }}
-            <button class="btn btn-primary" type="submit">Download</button>
+            <button id="downloadButton" class="btn btn-primary" type="submit">Download</button>
+            <button id="loadingButton" class="btn btn-primary" type="button" disabled>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Preparing Report...
+            </button>
         </form>
+
     </div>
     <div class="col border rounded p-3 m-2">
         <h5>Export Diff</h5>
@@ -24,5 +29,37 @@
         </form>
     </div>
 </div>
+{% endblock %}
 
+{% block script %}
+<script>
+    var loadingBtn = $('#loadingButton');
+    var downloadBtn = $('#downloadButton');
+
+    {% if task_id %}
+    downloadBtn.hide();
+    loadingBtn.show();
+    var intervalId = window.setInterval( function () {
+        $.get({
+            url: '{% url "pc-calc:task-progress" task_id %}',
+            success: function (data) {
+                console.log(data.status);
+                if (data.status === 'SUCCESS') {
+                    clearInterval(intervalId);
+                    loadingBtn.hide();
+                    downloadBtn.show();
+                    window.location.href = '{% url "pc-calc:task-data" task_id file_type %}';
+                } else if (data.status === 'FAILURE') {
+                    clearInterval(intervalId);
+                    loadingBtn.hide();
+                    downloadBtn.show();
+                    alert("This is the point that everything is collapsed and Tolga does not know about that. Please inform him immediately!!!");
+                }
+            }
+        });
+    }, 1000);
+    {% else %}
+    loadingBtn.hide();
+    {% endif %}
+</script>
 {% endblock %}

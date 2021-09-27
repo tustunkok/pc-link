@@ -36,22 +36,6 @@
             class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
             <span>Admin Panel</span>
         </h6>
-        <!--
-            {% if user.is_authenticated %}
-                {% url 'profile' as url %}
-                <li class="nav-item{% if request.path == url %} active{% endif %}" role="presentation"><a
-                        class="nav-link" href="{% url 'profile' %}">Profile</a></li>
-                {% if user.is_superuser %}
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
-                </li>
-                {% endif %}
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
-                {% else %}
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-                <li class="nav-item" role="presentation"><a class="nav-link" href="{% url 'register' %}">Register</a>
-                </li>
-                {% endif %}
-        -->
         <ul class="nav flex-column mb-2">
             <li class="nav-item">
                 {% url 'profile' as url %}
@@ -72,7 +56,7 @@
         {% endif %}
         <h6
             class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-            <span>v2.0.0-beta1</span>
+            <span>v2.0.0-beta2</span>
         </h6>
     </div>
 </nav>

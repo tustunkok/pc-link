@@ -20,7 +20,7 @@ from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.views import generic
 from django.urls import reverse_lazy
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -30,6 +30,7 @@ from django.core.management import call_command
 from django.db.models import Count, Max
 from django.core.paginator import Paginator
 from maintenance_mode.core import set_maintenance_mode
+from django_celery_results.models import TaskResult
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -38,6 +39,7 @@ from pc_calculator.models import *
 from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
+from pc_calculator.tasks import export_task
 
 from itertools import chain
 import pandas as pd
@@ -46,6 +48,8 @@ import logging
 import shutil
 import io
 import os
+import pickle
+from celery.utils.serialization import b64encode, b64decode
 
 logger = logging.getLogger('pc_link_custom_logger')
 
@@ -148,15 +152,68 @@ class ProgramOutcomeFileDeleteOnlyFileView(LoginRequiredMixin, generic.DeleteVie
 
 @login_required
 def report_view(request):
-    export_report_form = ExportReportForm()
+    """Exports the user uploaded entries filtered by the given parameters."""
+    export_report_form = ExportReportForm(request.POST or None)
     export_diff_report_form = ExportDiffReportForm()
+
+    context = {
+        'export_form': export_report_form,
+        'export_diff_form': export_diff_report_form
+    }
+
+    if request.method == 'POST' and export_report_form.is_valid():
+        logger.info(f'Export requested by {request.user}.')
+        file_type = export_report_form.cleaned_data['export_type']
+        semesters = export_report_form.cleaned_data['semesters']
+        logger.debug(f'Exporting for semesters: {semesters}')
+        async_result = export_task.apply_async((semesters,), serializer='pickle')
+        # return JsonResponse({'task_id': async_result.task_id})
+        context['task_id'] = async_result.task_id
+        context['file_type'] = file_type
+
     return render(
         request,
         'pc_calculator/report.html',
-        {'export_form': export_report_form,
-        'export_diff_form': export_diff_report_form}
+        context
     )
 
+
+@login_required
+def get_task_progress(request, uuid):
+    try:
+        result = TaskResult.objects.filter(task_id=uuid).first()
+        response_data = {
+            'status': result.status,
+        }
+    except:
+        response_data = {
+            'status': 'PENDING',
+        }
+
+    return JsonResponse(response_data)
+
+
+@login_required
+def get_task_data(request, uuid, file_type):
+    result = TaskResult.objects.filter(task_id=uuid).first()
+
+    report_df = pd.read_pickle(io.BytesIO(b64decode(result.result)))
+
+    if file_type == 'xlsx':
+        xlsx_buffer = io.BytesIO()
+        with pd.ExcelWriter(xlsx_buffer) as xlwriter:
+            report_df.to_excel(xlwriter)
+        xlsx_buffer.seek(0)
+        response = HttpResponse(xlsx_buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
+    elif file_type == 'csv':
+        csv_buffer = io.StringIO()
+        report_df.to_csv(csv_buffer, index=True)
+        csv_buffer.seek(0)
+        response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
+        response["Content-Disposition"] = 'attachment; filename="report.csv"'
+
+    return response
 
 def changelog(request):
     with open(settings.BASE_DIR / 'git-commit-history.log', 'r') as commit_hist_f:
@@ -272,23 +329,9 @@ def export(request):
     
     logger.debug(f'Exporting for semesters: {semesters}')
 
-    report_df = export_work(semesters)
+    report_df = export_task.delay(semesters)
 
-    if file_type == 'xlsx':
-        xlsx_buffer = io.BytesIO()
-        with pd.ExcelWriter(xlsx_buffer) as xlwriter:
-            report_df.to_excel(xlwriter)
-        xlsx_buffer.seek(0)
-        response = HttpResponse(xlsx_buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
-    elif file_type == 'csv':
-        csv_buffer = io.StringIO()
-        report_df.to_csv(csv_buffer, index=True)
-        csv_buffer.seek(0)
-        response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
-        response["Content-Disposition"] = 'attachment; filename="report.csv"'
-
-    return response
+    return HttpResponse('Task running')
 
 
 @login_required
