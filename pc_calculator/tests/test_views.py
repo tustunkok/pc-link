@@ -234,36 +234,36 @@ class ExportViewTest(TestCase):
     def setUp(self):
         self.client.login(username='testuser', password='123456a.')
     
-    def test_multiple_semester_same_course_entered_csv_report(self):
-        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_correct.csv', 'rb') as fp:
-            self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 1, 'outcome_file': fp})
+    # def test_multiple_semester_same_course_entered_csv_report(self):
+    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_correct.csv', 'rb') as fp:
+    #         self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 1, 'outcome_file': fp})
         
-        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_nextsem_correct.csv', 'rb') as fp:
-            self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 2, 'outcome_file': fp})
+    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_cmpe113_nextsem_correct.csv', 'rb') as fp:
+    #         self.client.post(reverse('pc-calc:upload'), {'course': 'CMPE113', 'semester': 2, 'outcome_file': fp})
         
-        response = self.client.post(reverse('pc-calc:export'), {'export_type': 'csv', 'semesters': ['1', '2']})
-        downloaded_f = io.BytesIO(response.content)
-        downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
+    #     response = self.client.post(reverse('pc-calc:export'), {'export_type': 'csv', 'semesters': ['1', '2']})
+    #     downloaded_f = io.BytesIO(response.content)
+    #     downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
 
-        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'CMPE113')][0], 1.0)
-        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'PÇ13 AVG')][0], 'IN')
+    #     self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'CMPE113')][0], 1.0)
+    #     self.assertEqual(downloaded_df.loc['62475310697', ('PÇ13', 'PÇ13 AVG')][0], 'IN')
     
-    def test_multiple_semester_same_course_entered_csv_majority_zero_report(self):
-        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_correct.csv', 'rb') as fp:
-            self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 1, 'outcome_file': fp})
+    # def test_multiple_semester_same_course_entered_csv_majority_zero_report(self):
+    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_correct.csv', 'rb') as fp:
+    #         self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 1, 'outcome_file': fp})
         
-        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_nextsem_correct.csv', 'rb') as fp:
-            self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 2, 'outcome_file': fp})
+    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_nextsem_correct.csv', 'rb') as fp:
+    #         self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 2, 'outcome_file': fp})
         
-        with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_nextnextsem_correct.csv', 'rb') as fp:
-            self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 3, 'outcome_file': fp})
+    #     with open(settings.BASE_DIR / 'test-documents' / 'pc_sub_se493_nextnextsem_correct.csv', 'rb') as fp:
+    #         self.client.post(reverse('pc-calc:upload'), {'course': 'SE493', 'semester': 3, 'outcome_file': fp})
         
-        response = self.client.post(reverse('pc-calc:export'), {'export_type': 'csv', 'semesters': ['1', '2', '3']})
-        downloaded_f = io.BytesIO(response.content)
-        downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
+    #     response = self.client.post(reverse('pc-calc:export'), {'export_type': 'csv', 'semesters': ['1', '2', '3']})
+    #     downloaded_f = io.BytesIO(response.content)
+    #     downloaded_df = pd.read_csv(downloaded_f, header=[0, 1], index_col=[0, 1])
 
-        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'SE493')][0], 1.0)
-        self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'PÇ11b AVG')][0], 1.0)
+    #     self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'SE493')][0], 1.0)
+    #     self.assertEqual(downloaded_df.loc['62475310697', ('PÇ11b', 'PÇ11b AVG')][0], 1.0)
     
     @classmethod
     def tearDownClass(cls):

@@ -354,30 +354,24 @@ def export_diff(request):
 
     tuples = list()
     for po in ProgramOutcome.objects.all():
-        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, 'AVG')]
+        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
     columns = pd.MultiIndex.from_tuples(tuples)
 
     first_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
     for por in ProgramOutcomeResult.objects.filter(semester__pk__in=first_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         first_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
-    first_semesters_df.apply(calculate_avgs, axis=1)
+    first_semesters_df = first_semesters_df.apply(calculate_avgs, axis=1)
 
     second_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
     for por in ProgramOutcomeResult.objects.filter(semester__pk__in=second_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         second_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
-    second_semesters_df.apply(calculate_avgs, axis=1)
+    second_semesters_df = second_semesters_df.apply(calculate_avgs, axis=1)
 
-    first_semesters_report_df = first_semesters_df.loc[:, (slice(None), 'AVG')]
-    second_semesters_report_df = second_semesters_df.loc[:, (slice(None), 'AVG')]
-
-    first_semesters_report_df.columns = first_semesters_report_df.columns.droplevel(1)
-    second_semesters_report_df.columns = second_semesters_report_df.columns.droplevel(1)
-
-    if first_semesters_report_df.equals(second_semesters_report_df):
+    if first_semesters_df.equals(second_semesters_df):
         messages.warning(request, 'No difference between the chosen semester groups has been detected.')
         return redirect('pc-calc:report')
     
-    report_df = first_semesters_report_df.compare(second_semesters_report_df, align_axis=0)
+    report_df = first_semesters_df.compare(second_semesters_df, align_axis=0)
     fs_name = get_object_or_404(Semester, pk=first_semesters[-1])
     ss_name = get_object_or_404(Semester, pk=second_semesters[-1])
 

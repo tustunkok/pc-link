@@ -1,8 +1,6 @@
 from celery import shared_task
 import logging
 import pandas as pd
-import pickle
-import io
 from .utils import (calculate_avgs, calculate_unsats)
 from .models import (ProgramOutcome, ProgramOutcomeResult, Student)
 
