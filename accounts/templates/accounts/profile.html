@@ -81,6 +81,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block script %}
 <script>
     document.getElementById("id_snapshot_file").onchange = function () {
         document.getElementById("snapshot-form").submit();
@@ -92,5 +95,4 @@
         })
     });
 </script>
-
 {% endblock %}
