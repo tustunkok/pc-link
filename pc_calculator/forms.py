@@ -151,6 +151,77 @@ class StudentBulkUploadForm(forms.Form):
         
         return data
 
+class CoursePOBulkUploadForm(forms.Form):
+    courses_csv_file = forms.FileField(label='Upload Courses CSV File:')
+    programoutcome_csv_file = forms.FileField(label='Upload Program Outcomes CSV File:')
+    po_course_csv_file = forms.FileField(label='Upload Program Outcomes vs. Courses CSV File:')
+
+    def clean_courses_csv_file(self):
+        data = self.cleaned_data.get('courses_csv_file')
+        contents_byte_str = data.read()
+        data.seek(0)
+        data_df = pd.read_csv(io.BytesIO(contents_byte_str), sep=None, engine='python')
+        
+        uploaded_file_ext = os.path.splitext(data.name)[1]
+
+        if uploaded_file_ext != '.csv':
+            raise ValidationError(
+                'The file extension does not indicate a CSV file.',
+                code='invalid'
+            )
+        
+        if not all(x in data_df.columns for x in ('course_code', 'course_name')):
+            raise ValidationError(
+                'The columns of the uploaded CSV file do not satisfy the expectations.',
+                code='invalid'
+            )
+        
+        return data
+    
+    def clean_programoutcome_csv_file(self):
+        data = self.cleaned_data.get('programoutcome_csv_file')
+        contents_byte_str = data.read()
+        data.seek(0)
+        data_df = pd.read_csv(io.BytesIO(contents_byte_str), sep=None, engine='python')
+
+        uploaded_file_ext = os.path.splitext(data.name)[1]
+
+        if uploaded_file_ext != '.csv':
+            raise ValidationError(
+                'The file extension does not indicate a CSV file.',
+                code='invalid'
+            )
+        
+        if not all(x in data_df.columns for x in ('po_code', 'po_desc')):
+            raise ValidationError(
+                'The columns of the uploaded CSV file do not satisfy the expectations.',
+                code='invalid'
+            )
+        
+        return data
+    
+    def clean_po_course_csv_file(self):
+        data = self.cleaned_data.get('po_course_csv_file')
+        contents_byte_str = data.read()
+        data.seek(0)
+        data_df = pd.read_csv(io.BytesIO(contents_byte_str), sep=None, engine='python')
+        
+        uploaded_file_ext = os.path.splitext(data.name)[1]
+
+        if uploaded_file_ext != '.csv':
+            raise ValidationError(
+                'The file extension does not indicate a CSV file.',
+                code='invalid'
+            )
+        
+        if not all(x in data_df.columns for x in ('course_code', 'pos')):
+            raise ValidationError(
+                'The columns of the uploaded CSV file do not satisfy the expectations.',
+                code='invalid'
+            )
+        
+        return data
+
 
 class ExportReportForm(forms.Form):
     export_type = forms.ChoiceField(choices=[('xlsx', 'Microsoft Excel File (.xlsx)'), ('csv', 'Comma Separated Values File (.csv)')], label='Export type:')

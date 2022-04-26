@@ -29,4 +29,6 @@ def export_task(semesters):
     report_df = report_df.apply(calculate_avgs, axis=1)
     report_df = report_df.apply(calculate_unsats, axis=1)
 
+    logger.debug(f'Finished creating report for semesters: {semesters}')
+
     return report_df

@@ -28,11 +28,15 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 from django.contrib.messages import constants as messages
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load environment variables from .env file.
+load_dotenv()
 
 
 # Quick-start development settings - unsuitable for production
@@ -44,9 +48,9 @@ with open(BASE_DIR / 'persist' / 'secret_key.txt', 'r') as f:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-ADMINS = [('Tolga Üstünkök', 'tolga.ustunkok@atilim.edu.tr')]
+ADMINS = [('Tolga Üstünkök', 'tolgaustunkok@gmail.com')]
 
-ALLOWED_HOSTS = ['127.0.0.1', 'pc-link.atilim.edu.tr']
+ALLOWED_HOSTS = ['pc-link.atilim.edu.tr', '172.16.91.99']
 
 
 # Application definition
@@ -61,10 +65,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'crispy_forms',
-    'maintenance_mode',
     'coverage',
-    'django_extensions',
-    'dbbackup',
     'django_celery_results',
     'pc_calculator.apps.PcCalculatorConfig',
     'accounts.apps.AccountsConfig',
@@ -78,7 +79,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'maintenance_mode.middleware.MaintenanceModeMiddleware',
 ]
 
 ROOT_URLCONF = 'pc_link_rest.urls'
@@ -94,7 +94,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'maintenance_mode.context_processors.maintenance_mode',
             ],
         },
     },
@@ -108,8 +107,16 @@ WSGI_APPLICATION = 'pc_link_rest.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'persist' / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('PCLINK_DB_NAME', 'pclink'),
+        'USER': os.getenv('PCLINK_DB_USER', 'pclink'),
+        'PASSWORD': os.getenv('PCLINK_DB_PASSWORD'),
+        'HOST': os.getenv('PCLINK_DB_HOST'),
+        'PORT': os.getenv('PCLINK_DB_PORT', '3306'),
+        'OPTIONS': {
+            'init_command': 'SET default_storage_engine=INNODB',
+            'read_default_file': str(BASE_DIR / 'my.cnf'),
+        },
     }
 }
 
@@ -160,6 +167,8 @@ STATIC_ROOT = BASE_DIR / 'static'
 
 MEDIA_ROOT = BASE_DIR / 'media'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 LOGIN_REDIRECT_URL = 'pc-calc:home'
@@ -171,14 +180,14 @@ else:
 
 AUTH_USER_MODEL = 'pc_calculator.User'
 
-SERVER_EMAIL = 'pc-link@atilim.edu.tr'
-EMAIL_HOST = 'mail.atilim.edu.tr'
-EMAIL_PORT = 587
-with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:
-    EMAIL_HOST_USER = f.readline().strip()
-    EMAIL_HOST_PASSWORD = f.readline().strip()
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'pc-link@atilim.edu.tr'
+SERVER_EMAIL = os.getenv('PCLINK_EMAIL_ADDR') # 'pc-link@atilim.edu.tr'
+EMAIL_HOST = os.getenv('PCLINK_EMAIL_HOST') # 'mail.atilim.edu.tr'
+EMAIL_PORT = os.getenv('PCLINK_EMAIL_PORT') # 587
+# with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:
+EMAIL_HOST_USER = os.getenv('PCLINK_EMAIL_USER') # f.readline().strip()
+EMAIL_HOST_PASSWORD = os.getenv('PCLINK_EMAIL_PASSWORD') # f.readline().strip()
+EMAIL_USE_TLS = bool(int(os.getenv('PCLINK_EMAIL_USE_TLS'))) # True
+DEFAULT_FROM_EMAIL = os.getenv('PCLINK_EMAIL_ADDR') # 'pc-link@atilim.edu.tr'
 
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': BASE_DIR / 'backups'}
@@ -225,7 +234,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR / 'persist' / 'pc-link.log',
             'formatter': 'verbose',
-            'maxBytes': 8388608,
+            'maxBytes': 3146000,
             'backupCount': 5
         },
         'mail_admins': {

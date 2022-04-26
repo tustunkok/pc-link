@@ -111,18 +111,6 @@ def populate_program_outcomes(request):
     ProgramOutcome.objects.bulk_create(instances)
     return redirect('/admin/pc_calculator/programoutcome/')
 
-def populate_courses(request):
-    with open("migration_files/course-cmpe.csv", "r") as csv_file:
-        file_iterable = iter(csv_file)
-        next(file_iterable)
-
-        instances = list()
-        for row in csv.reader(file_iterable):
-            course = Course(code=row[0], name=row[1])
-            course.save()
-            course.program_outcomes.add(*[ProgramOutcome.objects.get(code=f'PÇ{po}') for po in row[2].split('-')])
-    return redirect('/admin/pc_calculator/course/')
-
 
 def calculate_avgs(row):
     for idx in set(list(zip(*row.index))[0]):

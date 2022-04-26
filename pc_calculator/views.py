@@ -29,7 +29,6 @@ from django.conf import settings
 from django.core.management import call_command
 from django.db.models import Count, Max
 from django.core.paginator import Paginator
-from maintenance_mode.core import set_maintenance_mode
 from django_celery_results.models import TaskResult
 
 from rest_framework import generics
@@ -251,7 +250,8 @@ def upload_program_outcome_file(request):
         upload_result = handle_upload(request, course_code, semester_pk, csvFile)
 
         if upload_result[0]:
-            messages.success(request, f'Program Outcome file is successfuly uploaded. A submission report has been emailed to {request.user.email}.')
+            message = 'Program Outcome file is successfuly uploaded.'
+            
             if settings.DEBUG == False:
                 mail.send_mail(
                     f'[PÇ-Link]:  Program Outcome Upload for {course_code}',
@@ -268,6 +268,8 @@ Date Submitted: {datetime.datetime.now().strftime("%d/%b/%Y %H:%M:%S")}
                     [request.user.email],
                     fail_silently=False
                 )
+                message += f'A submission report has been emailed to {request.user.email}.'
+            messages.success(request, message)
             logger.info(f'[User: {request.user}] - An email has been sent to {request.user.email}.')
         else:
             messages.warning(request, 'No student from the department exists in the uploaded file.')
@@ -405,6 +407,7 @@ def course_report(request):
 
 
 @login_required
+@staff_member_required
 def populate_students(request):
     if request.method == 'POST':
         stu_bulk_form = StudentBulkUploadForm(request.POST, request.FILES)
@@ -435,6 +438,44 @@ def populate_students(request):
 
 @login_required
 @staff_member_required
+def populate_courses_and_pos(request):
+    if request.method == 'POST':
+        course_bulk_form = CoursePOBulkUploadForm(request.POST, request.FILES)
+
+        if course_bulk_form.is_valid():
+            courses_df = pd.read_csv(course_bulk_form.cleaned_data['courses_csv_file'])
+            program_outcomes_df = pd.read_csv(course_bulk_form.cleaned_data['programoutcome_csv_file'])
+            program_outcomes_courses_df = pd.read_csv(course_bulk_form.cleaned_data['po_course_csv_file'])
+
+            for idx, row in program_outcomes_df.iterrows():
+                ProgramOutcome.objects.update_or_create(
+                    code=row['po_code'],
+                    defaults={
+                        'description': row['po_desc'],
+                    }
+                )
+            
+            course_po_mapping = dict()
+            for idx, row in program_outcomes_courses_df.iterrows():
+                course_po_mapping[row['course_code']] = row['pos'].split('-')
+
+            for idx, row in courses_df.iterrows():
+                (course, created) = Course.objects.update_or_create(
+                    code=row['course_code'],
+                    defaults={
+                        'name': row['course_name'],
+                    }
+                )
+                course.program_outcomes.set(ProgramOutcome.objects.filter(code__in=course_po_mapping[row['course_code']]))
+
+            messages.success(request, 'Update successful.')
+        else:
+            messages.error(request, f'Update does not successful: {course_bulk_form.non_field_errors()}')
+        
+        return redirect('profile')
+
+@login_required
+@user_passes_test(lambda user: user.is_superuser)
 def recalculate_all_pos(request):
     logger.info('Deleting existing records...')
     ProgramOutcomeResult.objects.all().delete()

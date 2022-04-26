@@ -20,7 +20,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from accounts.forms import *
-from pc_calculator.forms import StudentBulkUploadForm, RestoreBackupForm
+from pc_calculator.forms import StudentBulkUploadForm, RestoreBackupForm, CoursePOBulkUploadForm
 from django.conf import settings
 
 def register(request):
@@ -69,6 +69,7 @@ def profile(request):
         p_form = ProfileUpdateForm(instance=request.user.profile)
         stu_bulk_form = StudentBulkUploadForm()
         excempt_stu_form = StudentBulkUploadForm()
+        course_bulk_form = CoursePOBulkUploadForm()
         snapshot_form = RestoreBackupForm()
     
     with open(settings.BASE_DIR / 'registration_state.txt', 'r') as reg_f:
@@ -80,7 +81,8 @@ def profile(request):
         'stu_bulk_form': stu_bulk_form,
         'excempt_stu_form': excempt_stu_form,
         'reg_status': reg_enabled,
-        'snapshot_form': snapshot_form
+        'snapshot_form': snapshot_form,
+        'course_bulk_form': course_bulk_form,
     }
 
     return render(request, 'accounts/profile.html', context)

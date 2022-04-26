@@ -46,9 +46,9 @@ urlpatterns = [
     path('recalculate-all-pos/', views.recalculate_all_pos, name='recalculate-all-pos'),
     path('dump-database/', views.dump_database, name='dump-database'),
     path('restore-pclink/', views.restore_pclink, name='restore-pclink'),
-    path('remove-duplicates/', views.remove_duplicates, name='remove-duplicates')
+    path('remove-duplicates/', views.remove_duplicates, name='remove-duplicates'),
+    path('upload/courses/', views.populate_courses_and_pos, name='populate-courses'),
     # path('upload/program-outcomes/', utils.populate_program_outcomes),
-    # path('upload/courses/', utils.populate_courses),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
