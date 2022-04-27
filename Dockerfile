@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     libpcre3-dev \
     graphviz \
     libgraphviz-dev \
+    default-libmysqlclient-dev \
     nano \
     curl \
     sudo \
@@ -21,9 +22,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY . /pc_link_rest/
 
-RUN bash /pc_link_rest/rabbitmq-install-script.sh
-
-RUN chmod a+x /pc_link_rest/start.sh && mkdir /pc_link_rest/persist/
+RUN chmod a+x /pc_link_rest/start.sh && mkdir /pc_link_rest/persist/ /pc_link_rest/static/
 RUN pip install --no-cache-dir -r /pc_link_rest/requirements.txt
 
 RUN AUTO_ADDED_PACKAGES=`apt-mark showauto` apt-get purge build-essential $AUTO_ADDED_PACKAGES -y \
@@ -35,5 +34,5 @@ RUN groupadd -g $PC_GID $PC_USER && \
 
 WORKDIR /pc_link_rest/
 
-# USER $PC_USER
-CMD /bin/sh start.sh
+USER $PC_USER
+CMD ["./start.sh"]

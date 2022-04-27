@@ -35,16 +35,9 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file.
-load_dotenv()
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-with open(BASE_DIR / 'persist' / 'secret_key.txt', 'r') as f:
-    SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -52,6 +45,12 @@ ADMINS = [('Tolga Üstünkök', 'tolgaustunkok@gmail.com')]
 
 ALLOWED_HOSTS = ['pc-link.atilim.edu.tr', '172.16.91.99']
 
+if DEBUG == True:
+    # Load environment variables from .env file.
+    load_dotenv()
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('PCLINK_SECRET_KEY')
 
 # Application definition
 
@@ -67,6 +66,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'coverage',
     'django_celery_results',
+    'django_probes',
     'pc_calculator.apps.PcCalculatorConfig',
     'accounts.apps.AccountsConfig',
 ]

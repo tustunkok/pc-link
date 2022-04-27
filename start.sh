@@ -1,26 +1,20 @@
 #!/bin/sh
 
-DATABASE_FILE=./persist/db.sqlite3
+echo "Waiting database to be ready..."
+python manage.py wait_for_database
 
-if [ ! -f "$DATABASE_FILE" ]; then
-    sudo --user=pclink --preserve-env python manage.py makemigrations
-    sudo --user=pclink --preserve-env python manage.py migrate
-    sudo --user=pclink --preserve-env python manage.py createsuperuser --noinput
+echo "Applying migrations..."
+python manage.py migrate
+
+if [ "$CREATE_SUPER_USER" = "1" ]; then
+    python manage.py createsuperuser --noinput
 fi
-
-if [ "$MIGRATE" = "1" ]; then
-    sudo --user=pclink --preserve-env python manage.py makemigrations
-    sudo --user=pclink --preserve-env python manage.py migrate
-fi
-
-echo "Running rabbitmq..."
-rabbitmq-server -detached
 
 echo "Collecting static files..."
-sudo --user=pclink --preserve-env python manage.py collectstatic --clear --noinput
+python manage.py collectstatic --clear --noinput
 
-echo "Starting celery..."
-sudo --user=pclink --preserve-env celery -A pc_link_rest worker --detach
+echo "Starting Celery..."
+celery -A pc_link_rest worker --detach
 
-echo "Starting uWSGI..."
-sudo --user=pclink --preserve-env uwsgi --ini django.ini
+echo "Starting Gunicorn..."
+gunicorn -b pclink:8000 -w 2 --forwarded-allow-ips="nginx" pc_link_rest.wsgi

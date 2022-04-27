@@ -10,7 +10,6 @@ __pycache__/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media
 maintenance_mode
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
@@ -127,13 +126,14 @@ secret*
 mariadb.cnf
 maintenance_mode_state.txt
 migration_files/
-media/
+media/uploads/
 persist/
 run-pclink.sh
 *.tar.gz
 test-documents.zip
 *.dot
 backups/
+docker-compose.yml
 
 # End of https://www.gitignore.io/api/django
 #

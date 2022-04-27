@@ -6,12 +6,14 @@
 maintenance_mode_state.txt
 secret_key.txt
 Dockerfile
-00*.py
+docker-compose.yml
 run-pclink.sh
 persist/
 static/
 .vscode/
 migration_files/
-media/
-PÇ-Link User Manual.odt
-Software Requirements Specification for PÇ-Link.odt
+media/uploads/
+docs/
+nginx/
+deploy.sh
+rabbitmq-install-script.sh
