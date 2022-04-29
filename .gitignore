@@ -127,6 +127,7 @@ mariadb.cnf
 maintenance_mode_state.txt
 migration_files/
 media/uploads/
+media/profile_pics/
 persist/
 run-pclink.sh
 *.tar.gz

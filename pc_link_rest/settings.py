@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_filters',
+    'django_extensions',
     'crispy_forms',
     'coverage',
     'django_celery_results',
@@ -157,8 +157,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-MAINTENANCE_MODE_IGNORE_ADMIN_SITE = True
-
 STATIC_URL = 'static/'
 
 MEDIA_URL = 'media/'
@@ -188,12 +186,6 @@ EMAIL_HOST_USER = os.getenv('PCLINK_EMAIL_USER') # f.readline().strip()
 EMAIL_HOST_PASSWORD = os.getenv('PCLINK_EMAIL_PASSWORD') # f.readline().strip()
 EMAIL_USE_TLS = bool(int(os.getenv('PCLINK_EMAIL_USE_TLS'))) # True
 DEFAULT_FROM_EMAIL = os.getenv('PCLINK_EMAIL_ADDR') # 'pc-link@atilim.edu.tr'
-
-DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
-DBBACKUP_STORAGE_OPTIONS = {'location': BASE_DIR / 'backups'}
-DBBACKUP_CLEANUP_KEEP = 1
-DBBACKUP_CLEANUP_KEEP_MEDIA = 1
-#DBBACKUP_GPG_RECIPIENT = ''
 
 CELERY_RESULT_BACKEND = 'django-db'
 # CELERY_TASK_SERIALIZER = 'pickle'
@@ -238,26 +230,22 @@ LOGGING = {
             'backupCount': 5
         },
         'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler',
+            'level': 'WARNING',
+            'filters': ['require_debug_false'],
+            'include_html': True,
         }
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console', 'file', 'mail_admins'],
             'level': 'INFO',
             'propagate': True,
         },
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': False,
-        },
         'pc_link_custom_logger': {
-            'handlers': ['file'],
+            'handlers': ['file', 'mail_admins'],
             'level': 'DEBUG',
-            'propagate': False
+            'propagate': True
         }
     }
 }

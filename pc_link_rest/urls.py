@@ -26,13 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('pc_calculator.urls')),
     path('accounts/', include('accounts.urls')),
-    re_path(r'^maintenance-mode/', include('maintenance_mode.urls')),
 ]
-
-handler404 = 'pc_calculator.views.page_not_found'
-handler500 = 'pc_calculator.views.server_error'
-handler403 = 'pc_calculator.views.permission_denied'
-handler400 = 'pc_calculator.views.bad_request'
 
 if settings.DEBUG == True:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -235,4 +235,4 @@ class ExportDiffReportForm(forms.Form):
 
 
 class RestoreBackupForm(forms.Form):
-    snapshot_file = forms.FileField(label="Snapshot File:", validators=[FileExtensionValidator(allowed_extensions=['zip'])])
+    snapshot_file = forms.FileField(label="Snapshot File:", validators=[FileExtensionValidator(allowed_extensions=['bz2'])])

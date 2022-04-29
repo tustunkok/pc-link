@@ -70,7 +70,7 @@
                         {{ course_bulk_form|crispy }}
                     </fieldset>
                     <div class="form-group">
-                        <button class="btn btn-outline-primary btn-sm" type="submit">Update Excempt Students</button>
+                        <button class="btn btn-outline-primary btn-sm" type="submit">Update Courses and POs</button>
                     </div>
                 </form>
             </div>
@@ -88,7 +88,7 @@
                     <td><a href="{% url 'test-server-error' %}">Test Server Error</a></td>
                 </tr>
                 <tr>
-                    <td><a href="#" style="cursor: not-allowed;">Create Backup Snapshot</a></td>
+                    <td><a href="{% url 'pc-calc:create-backup-snapshot' %}">Create Backup Snapshot</a></td>
                     <td>
                         <form method="POST" action="{% url 'pc-calc:restore-pclink' %}" enctype="multipart/form-data"
                             id="snapshot-form">{% csrf_token %}{{ snapshot_form|crispy }}</form>

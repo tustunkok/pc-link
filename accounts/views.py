@@ -45,7 +45,7 @@ def register(request):
 @login_required
 @staff_member_required
 def toggle_registrations(request):
-    with open(settings.BASE_DIR / 'registration_state.txt', 'r+') as reg_f:
+    with open(settings.BASE_DIR / 'persist/registration_state.txt', 'r+') as reg_f:
         reg_enabled = bool(int(reg_f.read()))
         reg_f.seek(0)
         reg_f.write(str(int(not reg_enabled)))
@@ -72,8 +72,13 @@ def profile(request):
         course_bulk_form = CoursePOBulkUploadForm()
         snapshot_form = RestoreBackupForm()
     
-    with open(settings.BASE_DIR / 'registration_state.txt', 'r') as reg_f:
-        reg_enabled = bool(int(reg_f.read()))
+    try:
+        with open(settings.BASE_DIR / 'persist' / 'registration_state.txt', 'r') as reg_f:
+            reg_enabled = bool(int(reg_f.read()))
+    except:
+        with open(settings.BASE_DIR / 'persist' / 'registration_state.txt', 'w') as reg_f:
+            reg_f.write('1')
+            reg_enabled = True
     
     context = {
         'u_form': u_form,

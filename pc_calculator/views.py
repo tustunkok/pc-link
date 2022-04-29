@@ -48,6 +48,8 @@ import shutil
 import io
 import os
 import pickle
+import bz2
+import sys
 from celery.utils.serialization import b64encode, b64decode
 
 logger = logging.getLogger('pc_link_custom_logger')
@@ -514,34 +516,54 @@ def recalculate_all_pos(request):
 
 @login_required
 @user_passes_test(lambda user: user.is_superuser)
-def dump_database(request):
-    set_maintenance_mode(True)
-    call_command('dbbackup', '--compress', '--clean', interactive=False)
-    call_command('mediabackup', '--compress', '--clean', interactive=False)
-    shutil.make_archive('/tmp/backup', 'zip', settings.BASE_DIR / 'backups')
+def dump_pclink(request):
+    dumpdata_str_io = io.StringIO()
 
-    response = FileResponse(open('/tmp/backup.zip', 'rb'), as_attachment=True)
-    # response["Content-Disposition"] = 'attachment; filename="backup.zip"'
-    set_maintenance_mode(False)
+    logger.info('Exporting the database.')
+    call_command('dumpdata', '--natural-foreign', '--natural-primary', stdout=dumpdata_str_io)
+    dumpdata_str_io.seek(0)
+
+    logger.info('Compressing the database JSON.')
+    dumpdata_bn_io = io.BytesIO()
+    with bz2.BZ2File(dumpdata_bn_io, 'wb', buffering=1024) as dumpdata_fp:
+        dumpdata_fp.write(bytes(dumpdata_str_io.getvalue(), encoding='utf8'))
+    dumpdata_bn_io.seek(0)
+    
+    logger.info('Sending compressed database file.')
+    response = FileResponse(dumpdata_bn_io, as_attachment=True)
+    response["Content-Disposition"] = 'attachment; filename="dumpdata.json.bz2"'
     return response
 
 @login_required
 @user_passes_test(lambda user: user.is_superuser)
 def restore_pclink(request):
     if request.method == 'POST':
-        set_maintenance_mode(True)
         snapshot_form = RestoreBackupForm(request.POST, request.FILES)
 
         if snapshot_form.is_valid():
-            with open('/tmp/backup.zip', 'wb') as backup_f:
-                backup_f.write(snapshot_form.cleaned_data['snapshot_file'].read())
-            shutil.rmtree(settings.BASE_DIR / 'backups', ignore_errors=True)
-            shutil.unpack_archive('/tmp/backup.zip', settings.BASE_DIR / 'backups', 'zip')
-            call_command('dbrestore', '--uncompress', interactive=False)
-            call_command('dbrestore', '--uncompress', interactive=False)
-            call_command('mediarestore', '--uncompress', interactive=False)
-        set_maintenance_mode(False)
-        messages.info(request, 'Database and media files are restored.')
+            logger.info('Reading and uncompressing database file.')
+            with bz2.BZ2File(snapshot_form.cleaned_data['snapshot_file'], 'rb', buffering=1024) as dumpdata_fp:
+                uncompressed_dumpdata = dumpdata_fp.read()
+
+            logger.info('Saving uncompressed database file.')
+            with open('persist/dumpdata.json', 'wb') as dumpdata_fp:
+                dumpdata_fp.write(uncompressed_dumpdata)
+            
+            logger.info('Deleting current database.')
+            call_command('reset_db', interactive=False)
+
+            logger.info('Applying migrations.')
+            call_command('migrate')
+
+            logger.info('Restoring database.')
+            call_command('loaddata', 'persist/dumpdata.json')
+
+            logger.info('Removing temporary JSON.')
+            os.remove('persist/dumpdata.json')
+
+            messages.info(request, 'Database and media files are restored.')
+        else:
+            messages.error(request, 'Database file is not valid.')
     return redirect('profile')
 
 
