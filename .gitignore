@@ -134,6 +134,7 @@ test-documents.zip
 *.dot
 backups/
 docker-compose.yml
+*dump.json
 
 # End of https://www.gitignore.io/api/django
 #
