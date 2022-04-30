@@ -178,20 +178,17 @@ else:
 
 AUTH_USER_MODEL = 'pc_calculator.User'
 
-SERVER_EMAIL = os.getenv('PCLINK_EMAIL_ADDR') # 'pc-link@atilim.edu.tr'
-EMAIL_HOST = os.getenv('PCLINK_EMAIL_HOST') # 'mail.atilim.edu.tr'
-EMAIL_PORT = os.getenv('PCLINK_EMAIL_PORT') # 587
-# with open(BASE_DIR / 'persist' / 'email_settings.txt', 'r') as f:
-EMAIL_HOST_USER = os.getenv('PCLINK_EMAIL_USER') # f.readline().strip()
-EMAIL_HOST_PASSWORD = os.getenv('PCLINK_EMAIL_PASSWORD') # f.readline().strip()
-EMAIL_USE_TLS = bool(int(os.getenv('PCLINK_EMAIL_USE_TLS'))) # True
-DEFAULT_FROM_EMAIL = os.getenv('PCLINK_EMAIL_ADDR') # 'pc-link@atilim.edu.tr'
+SERVER_EMAIL = os.getenv('PCLINK_EMAIL_ADDR')
+EMAIL_HOST = os.getenv('PCLINK_EMAIL_HOST')
+EMAIL_PORT = os.getenv('PCLINK_EMAIL_PORT')
+EMAIL_HOST_USER = os.getenv('PCLINK_EMAIL_USER')
+EMAIL_HOST_PASSWORD = os.getenv('PCLINK_EMAIL_PASSWORD')
+EMAIL_USE_TLS = bool(int(os.getenv('PCLINK_EMAIL_USE_TLS')))
+DEFAULT_FROM_EMAIL = os.getenv('PCLINK_EMAIL_ADDR')
 
 CELERY_RESULT_BACKEND = 'django-db'
-# CELERY_TASK_SERIALIZER = 'pickle'
 CELERY_RESULT_SERIALIZER = 'pickle'
 CELERY_ACCEPT_CONTENT = ['application/x-python-serialize']
-# CELERY_RESULT_ACCEPT_CONTENT = ['pickle']
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger'

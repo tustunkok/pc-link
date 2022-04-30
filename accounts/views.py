@@ -24,7 +24,7 @@ from pc_calculator.forms import StudentBulkUploadForm, RestoreBackupForm, Course
 from django.conf import settings
 
 def register(request):
-    with open(settings.BASE_DIR / 'registration_state.txt', 'r') as reg_f:
+    with open(settings.BASE_DIR / 'persist/registration_state.txt', 'r') as reg_f:
         reg_enabled = bool(int(reg_f.read()))
 
     if reg_enabled:
