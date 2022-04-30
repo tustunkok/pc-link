@@ -80,6 +80,7 @@ class Student(models.Model):
     transfer_student = models.BooleanField(default=False)
     double_major_student = models.BooleanField(default=False)
     graduated_on = models.DateField(blank=True, null=True)
+    assigned_curriculum = models.ForeignKey('Curriculum', on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -102,3 +103,10 @@ class ProgramOutcomeResult(models.Model):
     
     class Meta:
         ordering = ['course']
+
+class Curriculum(models.Model):
+    name = models.CharField(max_length=50)
+    member_courses = models.ManyToManyField(Course)
+
+    def __str__(self):
+        return self.name

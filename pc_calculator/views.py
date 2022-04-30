@@ -166,8 +166,9 @@ def report_view(request):
         logger.info(f'Export requested by {request.user}.')
         file_type = export_report_form.cleaned_data['export_type']
         semesters = export_report_form.cleaned_data['semesters']
-        logger.debug(f'Exporting for semesters: {semesters}')
-        async_result = export_task.apply_async((semesters,), serializer='pickle')
+        curriculum = export_report_form.cleaned_data['curriculum']
+        logger.debug(f'Exporting for semesters {semesters} for curriculum {curriculum}.')
+        async_result = export_task.apply_async((semesters, curriculum), serializer='pickle')
         # return JsonResponse({'task_id': async_result.task_id})
         context['task_id'] = async_result.task_id
         context['file_type'] = file_type
@@ -349,25 +350,26 @@ def export_diff(request):
     file_type = export_diff_report_form.cleaned_data['export_type']
     first_semesters = export_diff_report_form.cleaned_data['first_semesters']
     second_semesters = export_diff_report_form.cleaned_data['second_semesters']
+    curriculum = export_diff_report_form.cleaned_data['curriculum']
 
     if first_semesters == second_semesters:
         messages.warning(request, 'The two semester ranges are equal.')
         return redirect('pc-calc:report')
 
-    logger.debug(f'Diffing semesters: {first_semesters} and {second_semesters}')
+    logger.debug(f'Diffing semesters: {first_semesters} and {second_semesters} for curriculum {curriculum}')
 
     tuples = list()
     for po in ProgramOutcome.objects.all():
         tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
     columns = pd.MultiIndex.from_tuples(tuples)
 
-    first_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
-    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=first_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+    first_semesters_df = pd.DataFrame(index=Student.objects.filter(assigned_curriculum__pk=curriculum, graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
+    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=first_semesters, student__assigned_curriculum__pk=curriculum, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         first_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     first_semesters_df = first_semesters_df.apply(calculate_avgs, axis=1)
 
-    second_semesters_df = pd.DataFrame(index=Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
-    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=second_semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
+    second_semesters_df = pd.DataFrame(index=Student.objects.filter(assigned_curriculum__pk=curriculum, graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
+    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=second_semesters, student__assigned_curriculum__pk=curriculum, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         second_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
     second_semesters_df = second_semesters_df.apply(calculate_avgs, axis=1)
 

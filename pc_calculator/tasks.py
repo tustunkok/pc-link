@@ -8,15 +8,13 @@ logger = logging.getLogger('pc_link_custom_logger')
 
 
 @shared_task
-def export_task(semesters):    
-    logger.debug(f'Exporting for semesters: {semesters}')
-
+def export_task(semesters, curriculum):
     tuples = list()
     for po in ProgramOutcome.objects.all():
         tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
     columns = pd.MultiIndex.from_tuples(tuples)
 
-    report_df = pd.DataFrame(index=map(list, zip(*list(Student.objects.filter(graduated_on__isnull=True).values_list('no', 'name')) + [('Analysis', 'Total Number of Assessed Students'), ('Analysis', 'Number of Successful Students'), ('Analysis', 'Successful Student Percantage'), ('Analysis', 'Unsuccessful Student Percantage')])), columns=columns)
+    report_df = pd.DataFrame(index=map(list, zip(*list(Student.objects.filter(assigned_curriculum__pk=curriculum, graduated_on__isnull=True).values_list('no', 'name')) + [('Analysis', 'Total Number of Assessed Students'), ('Analysis', 'Number of Successful Students'), ('Analysis', 'Successful Student Percantage'), ('Analysis', 'Unsuccessful Student Percantage')])), columns=columns)
 
     for por in ProgramOutcomeResult.objects.filter(semester__in=semesters, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
         report_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction

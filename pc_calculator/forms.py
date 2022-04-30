@@ -39,6 +39,9 @@ def get_all_semesters():
 def get_courses():
     return [('', 'PLEASE SELECT A COURSE')] + [(course.code, f"{course.code} - {course.name}") for course in Course.objects.order_by("code")]
 
+def get_curriculums():
+    return [(curriculum.pk, curriculum.name) for curriculum in Curriculum.objects.all()]
+
 
 class ProgramOutcomeForm(forms.Form):
     course = forms.ChoiceField(choices=get_courses, label="Select a course:")
@@ -226,12 +229,14 @@ class CoursePOBulkUploadForm(forms.Form):
 class ExportReportForm(forms.Form):
     export_type = forms.ChoiceField(choices=[('xlsx', 'Microsoft Excel File (.xlsx)'), ('csv', 'Comma Separated Values File (.csv)')], label='Export type:')
     semesters = forms.MultipleChoiceField(choices=get_all_semesters, label='Choose the semesters that you want to take into account:')
+    curriculum = forms.ChoiceField(choices=get_curriculums, label='Choose the curriculum that you want to export:')
 
 
 class ExportDiffReportForm(forms.Form):
     export_type = forms.ChoiceField(choices=[('xlsx', 'Microsoft Excel File (.xlsx)'), ('csv', 'Comma Separated Values File (.csv)')], label='Export type:')
     first_semesters = forms.MultipleChoiceField(choices=get_all_semesters, label='Choose the first group of semesters that you want to compare:')
     second_semesters = forms.MultipleChoiceField(choices=get_all_semesters, label='Choose the second group of semesters that you want to compare:')
+    curriculum = forms.ChoiceField(choices=get_curriculums, label='Choose the curriculum that you want to export:')
 
 
 class RestoreBackupForm(forms.Form):
