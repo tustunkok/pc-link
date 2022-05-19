@@ -17,4 +17,4 @@ echo "Starting Celery..."
 celery -A pc_link_rest worker --detach
 
 echo "Starting Gunicorn..."
-gunicorn -b pclink:8000 --env SCRIPT_NAME="$SCRIPT_NAME" -w 2 --forwarded-allow-ips="nginx" pc_link_rest.wsgi
+gunicorn -t 300 -b pclink:8000 -e SCRIPT_NAME="$SCRIPT_NAME" -w 2 --forwarded-allow-ips="nginx" pc_link_rest.wsgi
