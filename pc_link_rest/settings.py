@@ -186,7 +186,7 @@ EMAIL_HOST_PASSWORD = os.getenv('PCLINK_EMAIL_PASSWORD')
 EMAIL_USE_TLS = bool(int(os.getenv('PCLINK_EMAIL_USE_TLS')))
 DEFAULT_FROM_EMAIL = os.getenv('PCLINK_EMAIL_ADDR')
 
-BROKER_URL = 'amqp://guest:guest@mq:5672//'
+CELERY_BROKER_URL = f'amqp://guest:guest@{os.getenv("BROKER_HOST")}:5672//'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_SERIALIZER = 'pickle'
 CELERY_ACCEPT_CONTENT = ['application/x-python-serialize']
