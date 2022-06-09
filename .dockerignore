@@ -1,7 +1,5 @@
 *.zip
 *.xcf
-.git/
-.gitignore
 .env
 maintenance_mode_state.txt
 secret_key.txt

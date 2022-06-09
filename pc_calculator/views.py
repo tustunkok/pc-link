@@ -38,7 +38,7 @@ from pc_calculator.models import *
 from pc_calculator.serializers import *
 from pc_calculator.forms import *
 from pc_calculator.utils import *
-from pc_calculator.tasks import export_task
+from pc_calculator.tasks import export_task, export_diff_task
 
 from itertools import chain
 import pandas as pd
@@ -155,23 +155,33 @@ class ProgramOutcomeFileDeleteOnlyFileView(LoginRequiredMixin, generic.DeleteVie
 def report_view(request):
     """Exports the user uploaded entries filtered by the given parameters."""
     export_report_form = ExportReportForm(request.POST or None)
-    export_diff_report_form = ExportDiffReportForm()
+    export_diff_report_form = ExportDiffReportForm(request.POST or None)
 
     context = {
         'export_form': export_report_form,
         'export_diff_form': export_diff_report_form
     }
 
-    if request.method == 'POST' and export_report_form.is_valid():
-        logger.info(f'Export requested by {request.user}.')
-        file_type = export_report_form.cleaned_data['export_type']
-        semesters = export_report_form.cleaned_data['semesters']
-        curriculum = export_report_form.cleaned_data['curriculum']
-        logger.debug(f'Exporting for semesters {semesters} for curriculum {curriculum}.')
-        async_result = export_task.apply_async((semesters, curriculum), serializer='pickle')
-        # return JsonResponse({'task_id': async_result.task_id})
-        context['task_id'] = async_result.task_id
-        context['file_type'] = file_type
+    if request.method == 'POST':
+        if export_report_form.is_valid():
+            logger.info(f'Export requested by {request.user}.')
+            file_type = export_report_form.cleaned_data['export_type']
+            semesters = export_report_form.cleaned_data['semesters']
+            curriculum = export_report_form.cleaned_data['curriculum']
+            logger.debug(f'Exporting for semesters {semesters} for curriculum {curriculum}.')
+            async_result = export_task.apply_async((semesters, curriculum), serializer='pickle')
+            context['task_id'] = async_result.task_id
+            context['file_type'] = file_type
+        elif export_diff_report_form.is_valid():
+            logger.info(f'Export diff requested by {request.user}.')
+            file_type = export_diff_report_form.cleaned_data['export_type']
+            first_semesters = export_diff_report_form.cleaned_data['first_semesters']
+            second_semesters = export_diff_report_form.cleaned_data['second_semesters']
+            curriculum = export_diff_report_form.cleaned_data['curriculum']
+            logger.debug(f'Exporting diff for semesters {first_semesters} and {second_semesters} for curriculum {curriculum}.')
+            async_result = export_diff_task.apply_async((first_semesters, second_semesters, curriculum), serializer='pickle')
+            context['task_id'] = async_result.task_id
+            context['file_type'] = file_type
 
     return render(
         request,
@@ -331,10 +341,11 @@ def export(request):
     
     file_type = export_report_form.cleaned_data['export_type']
     semesters = export_report_form.cleaned_data['semesters']
+    curriculum = export_report_form.cleaned_data['curriculum']
     
     logger.debug(f'Exporting for semesters: {semesters}')
 
-    report_df = export_task.delay(semesters)
+    report_df = export_task.delay(semesters, curriculum)
 
     return HttpResponse('Task running')
 
@@ -356,48 +367,9 @@ def export_diff(request):
         messages.warning(request, 'The two semester ranges are equal.')
         return redirect('pc-calc:report')
 
-    logger.debug(f'Diffing semesters: {first_semesters} and {second_semesters} for curriculum {curriculum}')
+    report_df = export_diff_task.delay(first_semesters, second_semesters, curriculum)
 
-    tuples = list()
-    for po in ProgramOutcome.objects.all():
-        tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
-    columns = pd.MultiIndex.from_tuples(tuples)
-
-    first_semesters_df = pd.DataFrame(index=Student.objects.filter(assigned_curriculum__pk=curriculum, graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
-    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=first_semesters, student__assigned_curriculum__pk=curriculum, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
-        first_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
-    first_semesters_df = first_semesters_df.apply(calculate_avgs, axis=1)
-
-    second_semesters_df = pd.DataFrame(index=Student.objects.filter(assigned_curriculum__pk=curriculum, graduated_on__isnull=True).values_list('no', 'name'), columns=columns)
-    for por in ProgramOutcomeResult.objects.filter(semester__pk__in=second_semesters, student__assigned_curriculum__pk=curriculum, student__graduated_on__isnull=True).order_by('semester__period_order_value'):
-        second_semesters_df.loc[por.student.no, (por.program_outcome.code, por.course.code)] = por.satisfaction
-    second_semesters_df = second_semesters_df.apply(calculate_avgs, axis=1)
-
-    if first_semesters_df.equals(second_semesters_df):
-        messages.warning(request, 'No difference between the chosen semester groups has been detected.')
-        return redirect('pc-calc:report')
-    
-    report_df = first_semesters_df.compare(second_semesters_df, align_axis=0)
-    fs_name = get_object_or_404(Semester, pk=first_semesters[-1])
-    ss_name = get_object_or_404(Semester, pk=second_semesters[-1])
-
-    report_df.rename(index={'self': str(fs_name),'other': str(ss_name)}, inplace=True)
-
-    if file_type == 'xlsx':
-        xlsx_buffer = io.BytesIO()
-        with pd.ExcelWriter(xlsx_buffer) as xlwriter:
-            report_df.to_excel(xlwriter)
-        xlsx_buffer.seek(0)
-        response = HttpResponse(xlsx_buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response["Content-Disposition"] = 'attachment; filename="report_diffs.xlsx"'
-    elif file_type == 'csv':
-        csv_buffer = io.StringIO()
-        report_df.to_csv(csv_buffer, index=True)
-        csv_buffer.seek(0)
-        response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
-        response["Content-Disposition"] = 'attachment; filename="report_diffs.csv"'
-
-    return response
+    return HttpResponse('Task running')
 
 
 @login_required

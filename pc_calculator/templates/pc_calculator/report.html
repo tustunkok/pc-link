@@ -11,8 +11,8 @@
         <form id="exportForm" method="POST">
             {% csrf_token %}
             {{ export_form|crispy }}
-            <button id="downloadButton" class="btn btn-primary" type="submit">Download</button>
-            <button id="loadingButton" class="btn btn-primary" type="button" disabled>
+            <button class="btn btn-primary downloadButton" type="submit">Download</button>
+            <button class="btn btn-primary loadingButton" type="button" disabled>
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 Preparing Report...
             </button>
@@ -22,10 +22,14 @@
     <div class="col border rounded p-3 m-2">
         <h5>Export Diff</h5>
         <hr>
-        <form action="{% url 'pc-calc:export-diff' %}" method="POST">
+        <form id="exportDiffForm" method="POST">
             {% csrf_token %}
             {{ export_diff_form|crispy }}
-            <button class="btn btn-primary" type="submit">Download</button>
+            <button class="btn btn-primary downloadButton" type="submit">Download</button>
+            <button class="btn btn-primary loadingButton" type="button" disabled>
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Preparing Report...
+            </button>
         </form>
     </div>
 </div>
@@ -33,32 +37,30 @@
 
 {% block script %}
 <script>
-    var loadingBtn = $('#loadingButton');
-    var downloadBtn = $('#downloadButton');
+    var loadingBtns = $('.loadingButton');
+    var downloadBtns = $('.downloadButton');
 
     {% if task_id %}
-    downloadBtn.hide();
-    loadingBtn.show();
+    downloadBtns.hide();
+    loadingBtns.show();
     var intervalId = window.setInterval( function () {
         $.get({
             url: '{% url "pc-calc:task-progress" task_id %}',
             success: function (data) {
+                clearInterval(intervalId);
+                loadingBtns.hide();
+                downloadBtns.show();
+
                 if (data.status === 'SUCCESS') {
-                    clearInterval(intervalId);
-                    loadingBtn.hide();
-                    downloadBtn.show();
                     window.location.href = '{% url "pc-calc:task-data" task_id file_type %}';
                 } else if (data.status === 'FAILURE') {
-                    clearInterval(intervalId);
-                    loadingBtn.hide();
-                    downloadBtn.show();
                     alert("This is the point that everything is collapsed and Tolga does not know about that. Please inform him immediately!!!");
                 }
             }
         });
     }, 1000);
     {% else %}
-    loadingBtn.hide();
+    loadingBtns.hide();
     {% endif %}
 </script>
 {% endblock %}
