@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     curl \
     sudo \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . /pc_link_rest/
