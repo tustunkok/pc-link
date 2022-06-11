@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.shortcuts import get_object_or_404
+from django.contrib import messages
 import logging
 import pandas as pd
 from .utils import (calculate_avgs, calculate_unsats)
@@ -9,7 +10,9 @@ logger = logging.getLogger('pc_link_custom_logger')
 
 
 @shared_task
-def export_task(semesters, curriculum=None):
+def export_task(semesters, curriculum):
+    logger.debug(f'Export task is called with semesters {semesters} and curriculum {curriculum}.')
+    
     tuples = list()
     for po in ProgramOutcome.objects.all():
         tuples += [(po.code, course.code) for course in po.course_set.all()] + [(po.code, f'{po.code} AVG'), (po.code, f'{po.code} #UNSAT')]
@@ -33,7 +36,7 @@ def export_task(semesters, curriculum=None):
     return report_df
 
 @shared_task
-def export_diff_task(first_grp_semesters, second_grp_semesters, curriculum=None):
+def export_diff_task(first_grp_semesters, second_grp_semesters, curriculum):
     logger.debug(f'Diffing semesters: {first_grp_semesters} and {second_grp_semesters} for curriculum {curriculum}')
 
     tuples = list()
@@ -52,8 +55,8 @@ def export_diff_task(first_grp_semesters, second_grp_semesters, curriculum=None)
     second_semesters_df = second_semesters_df.apply(calculate_avgs, axis=1)
 
     if first_semesters_df.equals(second_semesters_df):
-        messages.warning(request, 'No difference between the chosen semester groups has been detected.')
-        return redirect('pc-calc:report')
+        logger.warning('No difference between the chosen semester groups has been detected.')
+        return pd.DataFrame()
     
     report_df = first_semesters_df.compare(second_semesters_df, align_axis=0)
     fs_name = get_object_or_404(Semester, pk=first_grp_semesters[-1])

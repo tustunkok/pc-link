@@ -194,6 +194,11 @@ def report_view(request):
 def get_task_progress(request, uuid):
     try:
         result = TaskResult.objects.filter(task_id=uuid).first()
+        logger.debug(f'Sending task progress: {result.status}')
+
+        if result.status == 'FAILURE':
+            logger.error(result)
+
         response_data = {
             'status': result.status,
         }
@@ -207,9 +212,13 @@ def get_task_progress(request, uuid):
 
 @login_required
 def get_task_data(request, uuid, file_type):
+    logger.debug(f'get_task_data is called for uuid: {uuid} and file_type: {file_type}.')
+
     result = TaskResult.objects.filter(task_id=uuid).first()
 
     report_df = pd.read_pickle(io.BytesIO(b64decode(result.result)))
+
+    logger.debug(f'Found report_df with columns {report_df.columns}.')
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
@@ -218,12 +227,14 @@ def get_task_data(request, uuid, file_type):
         xlsx_buffer.seek(0)
         response = HttpResponse(xlsx_buffer.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response["Content-Disposition"] = 'attachment; filename="report.xlsx"'
+        logger.debug('XLSX response is prepared.')
     elif file_type == 'csv':
         csv_buffer = io.StringIO()
         report_df.to_csv(csv_buffer, index=True)
         csv_buffer.seek(0)
         response = HttpResponse(csv_buffer.read(), content_type = 'text/csv')
         response["Content-Disposition"] = 'attachment; filename="report.csv"'
+        logger.debug('CSV response is prepared.')
 
     return response
 

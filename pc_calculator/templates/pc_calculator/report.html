@@ -47,14 +47,17 @@
         $.get({
             url: '{% url "pc-calc:task-progress" task_id %}',
             success: function (data) {
-                clearInterval(intervalId);
-                loadingBtns.hide();
-                downloadBtns.show();
 
                 if (data.status === 'SUCCESS') {
                     window.location.href = '{% url "pc-calc:task-data" task_id file_type %}';
+                    clearInterval(intervalId);
+                    loadingBtns.hide();
+                    downloadBtns.show();
                 } else if (data.status === 'FAILURE') {
                     alert("This is the point that everything is collapsed and Tolga does not know about that. Please inform him immediately!!!");
+                    clearInterval(intervalId);
+                    loadingBtns.hide();
+                    downloadBtns.show();
                 }
             }
         });
