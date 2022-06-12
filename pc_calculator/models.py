@@ -80,7 +80,7 @@ class Student(models.Model):
     transfer_student = models.BooleanField(default=False)
     double_major_student = models.BooleanField(default=False)
     graduated_on = models.DateField(blank=True, null=True)
-    assigned_curriculum = models.ForeignKey('Curriculum', on_delete=models.SET_DEFAULT, default=1)
+    assigned_curriculum = models.ForeignKey('Curriculum', on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return self.name
