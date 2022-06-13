@@ -49,16 +49,23 @@
         {% endif %}
         <h6
             class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-            <span>Build v2.2.3-<a href="https://github.com/tustunkok/pc-link/commit/{{ latest_commit }}">{{ latest_commit }}</a></span>
+            <span>Build v2.2.4-<a href="https://github.com/tustunkok/pc-link/commit/{{ latest_commit }}">{{ latest_commit }}</a></span>
         </h6>
         <ul class="nav flex-column">
             <li class="nav-item">
-                {% url 'pc-calc:changelog' as url %}
                 <a class="nav-link{% if request.path == url %} active{% endif %}" href="{% url 'pc-calc:changelog' %}">
                     <span data-feather="shopping-cart"></span>
                     What's New?
                 </a>
             </li>
+            {% if user.is_authenticated and user.is_superuser %}
+            <li class="nav-item">
+                <a class="nav-link{% if request.path == url %} active{% endif %}" href="{% url 'pc-calc:logs' %}">
+                    <span data-feather="shopping-cart"></span>
+                    Logs
+                </a>
+            </li>
+            {% endif %}
         </ul>
     </div>
 </nav>

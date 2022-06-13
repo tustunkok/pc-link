@@ -36,6 +36,7 @@ urlpatterns = [
     path('export-diff/', views.export_diff, name='export-diff'),
     path('course-report/', views.course_report, name='course-report'),
     path('changelog/', views.changelog, name='changelog'),
+    path('logs/', views.debug_logs, name='logs'),
     path('manage/', views.ProgramOutcomeFileListView.as_view(), name='manage'),
     path('manage/<int:pk>/update/', views.ProgramOutcomeFileUpdateView.as_view(), name='update'),
     path('manage/<int:pk>/delete/', views.ProgramOutcomeFileDeleteView.as_view(), name='delete'),

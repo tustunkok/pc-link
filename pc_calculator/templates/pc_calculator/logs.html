@@ -1,0 +1,46 @@
+{% extends 'dashboard-base.html' %}
+{% load static %}
+{% block page_title %}Debug Logs{% endblock %}
+{% block content %}
+
+<table id="dtDynamicVerticalScrollExample" class="table">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Date</th>
+            <th scope="col">Level</th>
+            <th scope="col">Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log_entry in log_entries %}
+            {% if log_entry.level == 'INFO' %}
+            <tr>
+            {% elif log_entry.level == 'DEBUG' %}
+            <tr class="table-primary">
+            {% elif log_entry.level == 'WARNING' %}
+            <tr class="table-warning">
+            {% elif log_entry.level == 'ERROR' %}
+            <tr class="table-danger">
+            {% endif %}
+                <th scope="row">{{ forloop.counter }}</th>
+                <td>{{ log_entry.date|date:'m/M/Y G:i:s' }}</td>
+                <td>{{ log_entry.level }}</td>
+                <td>{{ log_entry.message }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    $(document).ready(function () {
+        $('#dtDynamicVerticalScrollExample').DataTable({
+            "scrollY": "65vh",
+            "scrollCollapse": true,
+        });
+    });
+</script>
+{% endblock %}

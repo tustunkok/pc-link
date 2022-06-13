@@ -43,13 +43,12 @@ from pc_calculator.tasks import export_task, export_diff_task
 from itertools import chain
 import pandas as pd
 import datetime
+import time
 import logging
-import shutil
 import io
 import os
-import pickle
 import bz2
-import sys
+import re
 from celery.utils.serialization import b64encode, b64decode
 
 logger = logging.getLogger('pc_link_custom_logger')
@@ -237,6 +236,31 @@ def get_task_data(request, uuid, file_type):
         logger.debug('CSV response is prepared.')
 
     return response
+
+
+@login_required
+@user_passes_test(lambda user: user.is_superuser)
+def debug_logs(request):
+    with open(settings.BASE_DIR / 'persist' / 'pc-link.log', 'r') as logs_f:
+        raw_log_entries = logs_f.readlines()
+    
+    raw_log_entries = list(reversed(raw_log_entries))
+
+    log_entries = list()
+    for row in raw_log_entries:
+        regex_result = re.search(r'\[(\d{2}\/[A-Z][a-z]{2}\/\d{4} \d{2}:\d{2}:\d{2}) (INFO|DEBUG|WARNING|ERROR|FATAL)\]  (.*)', row)
+        if regex_result is not None:
+            capture_groups = regex_result.groups()
+            log_time = datetime.datetime.strptime(capture_groups[0], '%d/%b/%Y %H:%M:%S')
+            log_entry = {
+                'date': log_time,
+                'level': capture_groups[1],
+                'message': capture_groups[2]
+            }
+            log_entries.append(log_entry)
+
+    return render(request, 'pc_calculator/logs.html', {'log_entries': log_entries})
+
 
 def changelog(request):
     with open(settings.BASE_DIR / 'git-commit-history.log', 'r') as commit_hist_f:
