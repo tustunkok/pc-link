@@ -24,7 +24,7 @@
             <tr class="table-danger">
             {% endif %}
                 <th scope="row">{{ forloop.counter }}</th>
-                <td>{{ log_entry.date|date:'m/M/Y G:i:s' }}</td>
+                <td>{{ log_entry.date|date:'d/m/Y G:i:s' }}</td>
                 <td>{{ log_entry.level }}</td>
                 <td>{{ log_entry.message }}</td>
             </tr>
