@@ -217,7 +217,7 @@ def get_task_data(request, uuid, file_type):
 
     report_df = pd.read_pickle(io.BytesIO(b64decode(result.result)))
 
-    logger.debug(f'Found report_df with columns {report_df.columns}.')
+    logger.debug(f'Found report_df with columns {report_df.columns.tolist()}.')
 
     if file_type == 'xlsx':
         xlsx_buffer = io.BytesIO()
